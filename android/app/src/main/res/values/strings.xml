@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">Wake Me Up: Smart Alarm &amp; Meds</string>
+  <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
+</resources>

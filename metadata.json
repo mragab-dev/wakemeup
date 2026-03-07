@@ -1,0 +1,8 @@
+{
+  "name": "Wake Me Up: Smart Alarm & Meds",
+  "description": "A smart alarm and medication reminder app with challenges to wake you up and AdMob integration.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
