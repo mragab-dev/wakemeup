@@ -1,4 +1,4 @@
-package app.quadravexa.wakemeup;
+package com.quadravexa.wakemeup;
 
 import android.app.Notification;
 import android.app.NotificationChannel;

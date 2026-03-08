@@ -95,7 +95,7 @@ export const ru = {
   sound_morning_alarm: 'Утренний будильник',
   sound_strange_alarm_clock: 'Странный будильник',
   sound_wake_up_clock: 'Часы для пробуждения',
-  
+
   alarmForm: {
     alarmNameLabel: 'Название будильника',
     alarmNamePlaceholder: 'Напр., Утренний подъем',
@@ -122,7 +122,7 @@ export const ru = {
     saveChangesButton: 'Сохранить изменения',
     addAlarmButton: 'Добавить будильник'
   },
-  
+
   challengeLabels: {
     level: 'Уровень {level}',
     questions: '{count} вопросов',
@@ -130,7 +130,7 @@ export const ru = {
 
   snoozeDurationMinutes: '{count} минут',
   snoozeMaxCountTimes: '{count} раз',
-  
+
   // Medications Screen
   addMedication: 'Добавить лекарство',
   editMedication: 'Редактировать лекарство',
@@ -138,7 +138,7 @@ export const ru = {
   deleteMedicationConfirm: 'Вы уверены, что хотите удалить это лекарство и все его напоминания?',
   noMedicationsAdded: 'Лекарства не добавлены',
   addFirstMedication: 'Добавьте ваше первое лекарство, чтобы начать использовать напоминания и отслеживание.',
-  
+
   // Medication Form
   medicationDetails: 'Детали лекарства',
   medicationNamePlaceholder: 'Напр., Витамин D',
@@ -178,7 +178,7 @@ export const ru = {
     pillsPerDosePositiveError: 'Количество таблеток на дозу должно быть положительным числом.',
     lowStockThresholdValidError: 'Пожалуйста, введите действительный порог низкого запаса.'
   },
-  
+
   unit_tablet: 'Таблетка(и)',
   unit_capsule: 'Капсула(ы)',
   unit_mg: 'мг',
@@ -189,7 +189,7 @@ export const ru = {
   unit_unit: 'Единица(ы)',
   unit_patch: 'Пластырь(и)',
   unit_injection: 'Инъекция(и)',
-  
+
   // Medication List Item
   medicationListItem: {
     next: 'След.:',
@@ -240,9 +240,9 @@ export const ru = {
   'reportsScreen.medStats.skipped': 'Пропущено',
   'reportsScreen.medStats.snoozed': 'Отложено',
   eventLogFilters: {
-      allEvents: 'Все',
-      alarmsEvents: 'Будильники',
-      medicationsEvents: 'Лекарства',
+    allEvents: 'Все',
+    alarmsEvents: 'Будильники',
+    medicationsEvents: 'Лекарства',
   },
   aiInsightsTitle: 'Аналитика от ИИ',
   geminiAnalysisTitle: 'Анализ Gemini',
@@ -250,7 +250,7 @@ export const ru = {
   analyzeHabits: 'Анализировать привычки',
   analyzingData: 'Анализ ваших данных...',
   aiError: 'Не удалось получить аналитику. Пожалуйста, проверьте ваше соединение или ключ API и попробуйте снова.',
-  
+
   // Event Log Types
   event_alarm_triggered: 'Сработал',
   event_alarm_snoozed: 'Отложен',
@@ -263,7 +263,7 @@ export const ru = {
   event_medication_added: 'Добавлено',
   event_medication_updated: 'Обновлено',
   event_medication_deleted: 'Удалено',
-  
+
   // Settings Screen
   appearance: 'Внешний вид',
   theme: 'Тема',
@@ -277,7 +277,29 @@ export const ru = {
   vibrationSettingDescription: 'Включить или выключить вибрацию для всех уведомлений.',
   about: 'О приложении',
   aboutDescription: 'Узнайте больше о приложении и его функциях.',
-  
+  permissionsStatus: 'Статус Разрешений',
+  permissionsStatusDescription: 'Проверка системных разрешений и разрешений приложения.',
+
+  // Permissions Screen
+  enabled: 'Включено',
+  disabled: 'Отключено',
+  granted: 'Разрешено',
+  denied: 'Отклонено',
+  undetermined: 'Не определено',
+  enableNow: 'Включить сейчас',
+  managePermissions: 'Управление разрешениями',
+  permissionsReasoning: 'Приложению необходимы эти разрешения, чтобы будильник звонил вовремя, а испытания пробуждения работали корректно.',
+  notificationsPermissionDesc: 'Оповещать вас о будильниках и лекарствах.',
+  cameraPermissionDesc: 'Сканировать QR-коды для отключения будильников.',
+  photosPermissionDesc: 'Добавлять фото коробок с лекарствами.',
+  exactAlarms: 'Точные будильники',
+  exactAlarmsDesc: 'Убедитесь, что будильник звонит в точную секунду.',
+  batteryOptimization: 'Оптимизация батареи',
+  batteryOptimizationDesc: 'Предотвратить закрытие приложения системой в фоновом режиме.',
+  overlayPermission: 'Отображение поверх других окон',
+  overlayPermissionDesc: 'Показывать экран будильника поверх любого другого приложения.',
+  checkAllPermissions: 'Проверить все разрешения',
+
   // About Screen
   aboutTitle: 'О Wake Up!',
   version: 'Версия 1.0.0',
@@ -287,7 +309,7 @@ export const ru = {
   challengesExplained: 'Объяснение заданий',
   footer_love: 'Сделано с ❤️, чтобы помочь вам добиться успеха.',
   footer_copyright: '© 2024. Все права защищены.',
-  
+
   feature_smartAlarms_title: 'Умные будильники',
   feature_smartAlarms_desc: 'Устанавливайте повторяющиеся будильники с настраиваемыми звуками и опциями откладывания.',
   feature_math_title: 'Математическое задание',
@@ -307,7 +329,7 @@ export const ru = {
   benefit_adherence_desc: 'Никогда не пропускайте дозу с умными напоминаниями и управлением запасами.',
   benefit_health_title: 'Улучшайте самочувствие',
   benefit_health_desc: 'Правильное начало дня и контроль за здоровьем способствуют лучшему образу жизни.',
-  
+
   // Alarm Challenge Screen
   timeToWakeUp: 'Время просыпаться!',
   mathChallenge: 'Математическое задание',
@@ -359,7 +381,7 @@ export const ru = {
   grantPermission: 'Предоставить разрешение',
   maxSnoozesReached: 'Достигнуто максимальное количество откладываний',
   maxSnoozesMessage: 'Вы больше не можете откладывать этот будильник.',
-  
+
   // Medication Reminder Screen
   medicationReminder: 'Напоминание о лекарстве',
   loadingMedication: 'Загрузка деталей лекарства...',
@@ -372,7 +394,7 @@ export const ru = {
   iTookIt: 'Я принял(а)',
   snooze10min: 'Отложить на 10 мин',
   skip: 'Пропустить',
-  
+
   // Generic
   doseNumbered: 'Доза {number}',
   hour: 'Час',

@@ -33,35 +33,38 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set, get) => ({
       ...defaultSettings,
-      
+
       updateSettings: (newSettings) => set((state) => ({
         ...state,
         ...newSettings,
       })),
-      
+
       resetSettings: () => set(defaultSettings),
-      
+
       t: (key: string, replacements?: { [key: string]: string | number }): string => {
         const state = get();
         if (!translations) {
           // Return key if translations not loaded yet
           return key;
         }
-        
+
         const lang = state.language || 'en';
         const langTranslations = translations[lang] || translations.en;
 
-        const keys = key.split('.');
-        let value: any = langTranslations;
-        
-        for (const k of keys) {
-          if (value === undefined) {
-            value = undefined;
-            break;
+        let value: any = langTranslations[key];
+
+        if (value === undefined) {
+          const keys = key.split('.');
+          value = langTranslations;
+          for (const k of keys) {
+            if (value === undefined) {
+              value = undefined;
+              break;
+            }
+            value = value[k];
           }
-          value = value[k];
         }
-        
+
         let str = value || key;
 
         if (replacements) {
@@ -69,7 +72,7 @@ export const useSettingsStore = create<SettingsState>()(
             str = str.replace(`{${placeholder}}`, String(replacements[placeholder]));
           }
         }
-        
+
         return str;
       },
     }),

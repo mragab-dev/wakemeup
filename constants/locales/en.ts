@@ -278,6 +278,28 @@ export const en = {
   notifications: 'Notifications',
   vibrationSettingDescription: 'Enable or disable vibration for all notifications.',
   aboutDescription: 'Learn more about the app and its features.',
+  permissionsStatus: 'Permissions Status',
+  permissionsStatusDescription: 'Check system and app permissions.',
+
+  // Permissions Screen
+  enabled: 'Enabled',
+  disabled: 'Disabled',
+  granted: 'Granted',
+  denied: 'Denied',
+  undetermined: 'Undetermined',
+  enableNow: 'Enable Now',
+  managePermissions: 'Manage Permissions',
+  permissionsReasoning: 'The app needs these permissions to ensure the alarm rings on time and wake-up challenges work correctly.',
+  notificationsPermissionDesc: 'Alert you for alarms and medications.',
+  cameraPermissionDesc: 'Scan QR codes to dismiss alarms.',
+  photosPermissionDesc: 'Add photos for medication boxes.',
+  exactAlarms: 'Exact Alarms',
+  exactAlarmsDesc: 'Ensure the alarm rings at the exact second.',
+  batteryOptimization: 'Battery Optimization',
+  batteryOptimizationDesc: 'Prevent the system from closing the app in the background.',
+  overlayPermission: 'Display Over Other Apps',
+  overlayPermissionDesc: 'Show the alarm screen over any other app.',
+  checkAllPermissions: 'Check All Permissions',
 
   // About Screen
   aboutTitle: 'About Wake Up!',

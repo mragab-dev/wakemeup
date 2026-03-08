@@ -29,8 +29,10 @@ const { AlarmModule } = NativeModules;
 
 export default function PermissionStatusScreen() {
     const { colors } = useTheme();
-    const { t } = useSettingsStore();
+    const { t, language } = useSettingsStore();
     const [refreshing, setRefreshing] = useState(false);
+
+    const isRTL = language === 'ar';
 
     const [statuses, setStatuses] = useState({
         notifications: 'undetermined',
@@ -41,7 +43,7 @@ export default function PermissionStatusScreen() {
         overlay: false,
     });
 
-    const styles = createStyles(colors);
+    const styles = createStyles(colors, isRTL);
 
     useEffect(() => {
         checkAllPermissions();
@@ -88,12 +90,12 @@ export default function PermissionStatusScreen() {
 
     const getStatusText = (status: string | boolean) => {
         if (typeof status === 'boolean') {
-            return status ? "مفعلة" : "غير مفعلة";
+            return status ? t('enabled') : t('disabled');
         }
         switch (status) {
-            case 'granted': return "مسموح";
-            case 'denied': return "مرفوض";
-            default: return "غير محدد";
+            case 'granted': return t('granted');
+            case 'denied': return t('denied');
+            default: return t('undetermined');
         }
     };
 
@@ -141,7 +143,7 @@ export default function PermissionStatusScreen() {
 
             {((typeof status === 'boolean' && !status) || (typeof status === 'string' && status !== 'granted')) && (
                 <Button
-                    title="تفعيل الآن"
+                    title={t('enableNow')}
                     onPress={() => requestPermission(type)}
                     variant="outline"
                     size="sm"
@@ -159,7 +161,7 @@ export default function PermissionStatusScreen() {
             }
         >
             <Stack.Screen options={{
-                title: "حالة الصلاحيات", headerRight: () => (
+                title: t('permissionsStatus'), headerRight: () => (
                     <TouchableOpacity onPress={checkAllPermissions} style={styles.headerButton}>
                         <RefreshCcw size={20} color={colors.primary} />
                     </TouchableOpacity>
@@ -169,31 +171,31 @@ export default function PermissionStatusScreen() {
             <View style={styles.content}>
                 <View style={styles.infoBox}>
                     <ShieldCheck size={40} color={colors.primary} />
-                    <Text style={styles.infoTitle}>إدارة الصلاحيات</Text>
+                    <Text style={styles.infoTitle}>{t('managePermissions')}</Text>
                     <Text style={styles.infoText}>
-                        يحتاج التطبيق لهذه الصلاحيات لضمان رنين المنبه في وقته وتدقيق تحديات الاستيقاظ بشكل صحيح.
+                        {t('permissionsReasoning')}
                     </Text>
                 </View>
 
                 <PermissionItem
-                    title="الإشعارات"
-                    description="تنبيهك بموعد المنبه والأدوية"
+                    title={t('notifications')}
+                    description={t('notificationsPermissionDesc')}
                     status={statuses.notifications}
                     type="notifications"
                     icon={Bell}
                 />
 
                 <PermissionItem
-                    title="الكاميرا"
-                    description="مسح رموز QR لإيقاف المنبه"
+                    title={t('camera')}
+                    description={t('cameraPermissionDesc')}
                     status={statuses.camera}
                     type="camera"
                     icon={Camera}
                 />
 
                 <PermissionItem
-                    title="الصور"
-                    description="إضافة صور لعلب الأدوية"
+                    title={t('photos')}
+                    description={t('photosPermissionDesc')}
                     status={statuses.photos}
                     type="photos"
                     icon={ImageIcon}
@@ -202,24 +204,24 @@ export default function PermissionStatusScreen() {
                 {Platform.OS === 'android' && (
                     <>
                         <PermissionItem
-                            title="المنبهات الدقيقة"
-                            description="لضمان الرنين في الثانية المحددة"
+                            title={t('exactAlarms')}
+                            description={t('exactAlarmsDesc')}
                             status={statuses.exactAlarm}
                             type="exactAlarm"
                             icon={Clock}
                         />
 
                         <PermissionItem
-                            title="تحسين البطارية"
-                            description="منع النظام من إغلاق التطبيق في الخلفية"
+                            title={t('batteryOptimization')}
+                            description={t('batteryOptimizationDesc')}
                             status={statuses.batteryOptimization}
                             type="battery"
                             icon={Battery}
                         />
 
                         <PermissionItem
-                            title="الظهور فوق التطبيقات"
-                            description="إظهار شاشة المنبه فوق أي تطبيق آخر"
+                            title={t('overlayPermission')}
+                            description={t('overlayPermissionDesc')}
                             status={statuses.overlay}
                             type="overlay"
                             icon={Layers}
@@ -228,7 +230,7 @@ export default function PermissionStatusScreen() {
                 )}
 
                 <Button
-                    title="فحص جميع الصلاحيات"
+                    title={t('checkAllPermissions')}
                     onPress={checkAllPermissions}
                     leftIcon={<RefreshCcw size={20} color="white" />}
                     style={styles.checkAllButton}
@@ -238,7 +240,7 @@ export default function PermissionStatusScreen() {
     );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, isRTL: boolean = false) => StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -273,7 +275,7 @@ const createStyles = (colors: any) => StyleSheet.create({
         padding: theme.spacing.md,
     },
     itemHeader: {
-        flexDirection: 'row',
+        flexDirection: isRTL ? 'row-reverse' : 'row',
         alignItems: 'center',
     },
     iconContainer: {
@@ -282,10 +284,12 @@ const createStyles = (colors: any) => StyleSheet.create({
         borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: theme.spacing.md,
+        marginRight: isRTL ? 0 : theme.spacing.md,
+        marginLeft: isRTL ? theme.spacing.md : 0,
     },
     itemInfo: {
         flex: 1,
+        alignItems: isRTL ? 'flex-end' : 'flex-start',
     },
     itemTitle: {
         fontSize: theme.typography.fontSizes.md,

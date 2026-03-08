@@ -15,10 +15,10 @@
     "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.quadravexa.wakemeuprrk"
+      "bundleIdentifier": "com.quadravexa.wakemeup"
     },
     "android": {
-      "package": "app.quadravexa.wakemeup",
+      "package": "com.quadravexa.wakemeup",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,7 +26,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "plugins": [

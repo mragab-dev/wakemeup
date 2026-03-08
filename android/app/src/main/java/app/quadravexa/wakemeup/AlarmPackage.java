@@ -1,4 +1,4 @@
-package app.quadravexa.wakemeup;
+package com.quadravexa.wakemeup;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;

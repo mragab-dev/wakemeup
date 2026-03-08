@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>myapp</string>
-          <string>app.quadravexa.wakemeuprrk</string>
+          <string>com.quadravexa.wakemeuprrk</string>
         </array>
       </dict>
     </array>

@@ -95,7 +95,7 @@ export const de = {
   sound_morning_alarm: 'Morgenwecker',
   sound_strange_alarm_clock: 'Seltsamer Wecker',
   sound_wake_up_clock: 'Aufwach-Uhr',
-  
+
   alarmForm: {
     alarmNameLabel: 'Weckername',
     alarmNamePlaceholder: 'z.B. Morgens aufwachen',
@@ -122,7 +122,7 @@ export const de = {
     saveChangesButton: 'Änderungen speichern',
     addAlarmButton: 'Wecker hinzufügen'
   },
-  
+
   challengeLabels: {
     level: 'Stufe {level}',
     questions: '{count} Fragen',
@@ -130,7 +130,7 @@ export const de = {
 
   snoozeDurationMinutes: '{count} Minute(n)',
   snoozeMaxCountTimes: '{count} Mal',
-  
+
   // Medications Screen
   addMedication: 'Medikament hinzufügen',
   editMedication: 'Medikament bearbeiten',
@@ -138,7 +138,7 @@ export const de = {
   deleteMedicationConfirm: 'Sind Sie sicher, dass Sie dieses Medikament und alle seine Erinnerungen löschen möchten?',
   noMedicationsAdded: 'Keine Medikamente hinzugefügt',
   addFirstMedication: 'Fügen Sie Ihr erstes Medikament hinzu, um mit Erinnerungen und Tracking zu beginnen.',
-  
+
   // Medication Form
   medicationDetails: 'Medikamentendetails',
   medicationNamePlaceholder: 'z.B. Vitamin D',
@@ -178,7 +178,7 @@ export const de = {
     pillsPerDosePositiveError: 'Pillen pro Dosis muss eine positive Zahl sein.',
     lowStockThresholdValidError: 'Bitte geben Sie einen gültigen Schwellenwert für niedrigen Bestand ein.'
   },
-  
+
   unit_tablet: 'Tablette(n)',
   unit_capsule: 'Kapsel(n)',
   unit_mg: 'mg',
@@ -189,7 +189,7 @@ export const de = {
   unit_unit: 'Einheit(en)',
   unit_patch: 'Pflaster',
   unit_injection: 'Injektion(en)',
-  
+
   // Medication List Item
   medicationListItem: {
     next: 'Nächste:',
@@ -240,9 +240,9 @@ export const de = {
   'reportsScreen.medStats.skipped': 'Übersprungen',
   'reportsScreen.medStats.snoozed': 'Verschlafen',
   eventLogFilters: {
-      allEvents: 'Alle',
-      alarmsEvents: 'Wecker',
-      medicationsEvents: 'Medis',
+    allEvents: 'Alle',
+    alarmsEvents: 'Wecker',
+    medicationsEvents: 'Medis',
   },
   aiInsightsTitle: 'KI-gestützte Einblicke',
   geminiAnalysisTitle: 'Gemini-Analyse',
@@ -250,7 +250,7 @@ export const de = {
   analyzeHabits: 'Meine Gewohnheiten analysieren',
   analyzingData: 'Analysiere deine Daten...',
   aiError: 'Einblicke konnten nicht abgerufen werden. Bitte überprüfen Sie Ihre Verbindung oder Ihren API-Schlüssel und versuchen Sie es erneut.',
-  
+
   // Event Log Types
   event_alarm_triggered: 'Ausgelöst',
   event_alarm_snoozed: 'Verschlafen',
@@ -263,7 +263,7 @@ export const de = {
   event_medication_added: 'Hinzugefügt',
   event_medication_updated: 'Aktualisiert',
   event_medication_deleted: 'Gelöscht',
-  
+
   // Settings Screen
   appearance: 'Erscheinungsbild',
   theme: 'Thema',
@@ -275,9 +275,29 @@ export const de = {
   languageDescription: 'Wählen Sie die Anzeigesprache für die App.',
   notifications: 'Benachrichtigungen',
   vibrationSettingDescription: 'Aktivieren oder deaktivieren Sie die Vibration für alle Benachrichtigungen.',
-  about: 'Über',
-  aboutDescription: 'Erfahren Sie mehr über die App und ihre Funktionen.',
-  
+  permissionsStatus: 'Berechtigungsstatus',
+  permissionsStatusDescription: 'System- und App-Berechtigungen prüfen.',
+
+  // Permissions Screen
+  enabled: 'Aktiviert',
+  disabled: 'Deaktiviert',
+  granted: 'Erlaubt',
+  denied: 'Abgelehnt',
+  undetermined: 'Unbestimmt',
+  enableNow: 'Jetzt aktivieren',
+  managePermissions: 'Berechtigungen verwalten',
+  permissionsReasoning: 'Die App benötigt diese Berechtigungen, um sicherzustellen, dass der Alarm pünktlich klingelt und die Weck-Herausforderungen richtig funktionieren.',
+  notificationsPermissionDesc: 'Sie über Alarme und Medikamente benachrichtigen.',
+  cameraPermissionDesc: 'QR-Codes scannen, um Alarme auszuschalten.',
+  photosPermissionDesc: 'Fotos für Medikamentenschachteln hinzufügen.',
+  exactAlarms: 'Exakte Alarme',
+  exactAlarmsDesc: 'Sicherstellen, dass der Alarm auf die Sekunde genau klingelt.',
+  batteryOptimization: 'Akku-Optimierung',
+  batteryOptimizationDesc: 'Verhindern, dass das System die App im Hintergrund schließt.',
+  overlayPermission: 'Über anderen Apps anzeigen',
+  overlayPermissionDesc: 'Den Alarmbildschirm über jeder anderen App anzeigen.',
+  checkAllPermissions: 'Alle Berechtigungen prüfen',
+
   // About Screen
   aboutTitle: 'Über Wake Up!',
   version: 'Version 1.0.0',
@@ -287,7 +307,7 @@ export const de = {
   challengesExplained: 'Erklärung der Herausforderungen',
   footer_love: 'Mit ❤️ gemacht, um Ihnen zum Erfolg zu verhelfen.',
   footer_copyright: '© 2024. Alle Rechte vorbehalten.',
-  
+
   feature_smartAlarms_title: 'Intelligente Wecker',
   feature_smartAlarms_desc: 'Stellen Sie wiederkehrende Wecker mit anpassbaren Tönen und Schlummeroptionen ein.',
   feature_math_title: 'Mathe-Herausforderung',
@@ -307,7 +327,7 @@ export const de = {
   benefit_adherence_desc: 'Verpassen Sie nie wieder eine Dosis mit intelligenten Erinnerungen und Bestandsverwaltung.',
   benefit_health_title: 'Wohlbefinden steigern',
   benefit_health_desc: 'Den Tag richtig zu beginnen und auf Ihre Gesundheit zu achten, trägt zu einem besseren Lebensstil bei.',
-  
+
   // Alarm Challenge Screen
   timeToWakeUp: 'Zeit zum Aufwachen!',
   mathChallenge: 'Mathe-Herausforderung',
@@ -359,7 +379,7 @@ export const de = {
   grantPermission: 'Berechtigung erteilen',
   maxSnoozesReached: 'Maximale Anzahl an Schlummerphasen erreicht',
   maxSnoozesMessage: 'Sie können diesen Wecker nicht mehr schlummern lassen.',
-  
+
   // Medication Reminder Screen
   medicationReminder: 'Medikamenten-Erinnerung',
   loadingMedication: 'Lade Medikamentendetails...',
@@ -372,7 +392,7 @@ export const de = {
   iTookIt: 'Ich habe es genommen',
   snooze10min: '10 Min. schlummern',
   skip: 'Überspringen',
-  
+
   // Generic
   doseNumbered: 'Dosis {number}',
   hour: 'Stunde',

@@ -1,4 +1,4 @@
-package app.quadravexa.wakemeup;
+package com.quadravexa.wakemeup;
 
 import android.content.Intent;
 import android.os.Bundle;

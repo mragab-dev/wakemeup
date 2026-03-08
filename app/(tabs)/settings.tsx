@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -49,19 +49,10 @@ export default function SettingsScreen() {
     updateSettings({ theme: newTheme });
   };
 
+  const [isLanguageModalVisible, setLanguageModalVisible] = React.useState(false);
+
   const handleLanguageChange = () => {
-    Alert.alert(
-      t('language'),
-      t('languageDescription'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        ...languageOptions.map(lang => ({
-          text: `${lang.nativeName} (${lang.name})`,
-          onPress: () => updateSettings({ language: lang.code }),
-          style: 'default' as const,
-        })),
-      ]
-    );
+    setLanguageModalVisible(true);
   };
 
   const getCurrentLanguageName = () => {
@@ -145,8 +136,8 @@ export default function SettingsScreen() {
                 <ShieldCheck size={20} color={colors.primary} />
               </View>
               <View style={{ flex: 1, flexShrink: 1 }}>
-                <Text style={styles.settingLabel}>حالة الصلاحيات</Text>
-                <Text style={styles.settingDescription}>فحص صلاحيات النظام والتطبيق</Text>
+                <Text style={styles.settingLabel}>{t('permissionsStatus')}</Text>
+                <Text style={styles.settingDescription}>{t('permissionsStatusDescription')}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textSecondary} />
@@ -207,7 +198,57 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Card>
       </View>
-    </ScrollView>
+
+      <Modal
+        visible={isLanguageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setLanguageModalVisible(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('language')}</Text>
+            <Text style={styles.modalDescription}>{t('languageDescription')}</Text>
+
+            {languageOptions.map((lang, index) => (
+              <TouchableOpacity
+                key={lang.code}
+                style={[
+                  styles.modalOption,
+                  language === lang.code && { backgroundColor: colors.primary + '20' },
+                  index === languageOptions.length - 1 && { borderBottomWidth: 0 }
+                ]}
+                onPress={() => {
+                  updateSettings({ language: lang.code });
+                  setLanguageModalVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.modalOptionText,
+                    language === lang.code && { color: colors.primary, fontWeight: 'bold' }
+                  ]}
+                >
+                  {lang.nativeName} ({lang.name})
+                </Text>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => setLanguageModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+    </ScrollView >
   );
 }
 
@@ -262,5 +303,57 @@ const createStyles = (colors: any) => StyleSheet.create({
   settingDescription: {
     fontSize: theme.typography.fontSizes.sm,
     color: colors.textSecondary,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: theme.spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: theme.typography.fontSizes.xl,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: theme.spacing.sm,
+    textAlign: 'center',
+  },
+  modalDescription: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: colors.textSecondary,
+    marginBottom: theme.spacing.lg,
+    textAlign: 'center',
+  },
+  modalOption: {
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOptionText: {
+    fontSize: theme.typography.fontSizes.md,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  modalCancelButton: {
+    marginTop: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    fontSize: theme.typography.fontSizes.md,
+    fontWeight: 'bold',
+    color: colors.error,
   },
 });

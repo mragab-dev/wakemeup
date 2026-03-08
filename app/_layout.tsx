@@ -166,6 +166,37 @@ export default function RootLayout() {
 
   const handleIntentExtras = (extras: any) => {
     if (extras?.openChallenge && extras?.alarmId) {
+      if (extras.type === 'medication') {
+        console.log("Routing to medication reminder screen from intent extras:", extras);
+
+        // Medical alarmId format: medicationId_doseId
+        // But it might have suffixes like _day_3 or _snooze
+        let cleanId = extras.alarmId as string;
+
+        // Strip snooze
+        if (cleanId.endsWith('_snooze')) {
+          cleanId = cleanId.replace('_snooze', '');
+        }
+
+        // Strip day suffix (_day_x)
+        const dayMatch = cleanId.match(/_day_\d+$/);
+        if (dayMatch) {
+          cleanId = cleanId.replace(dayMatch[0], '');
+        }
+
+        const parts = cleanId.split('_');
+        if (parts.length >= 2) {
+          router.push({
+            pathname: '/medication-reminder',
+            params: {
+              medicationId: parts[0],
+              doseId: parts[1]
+            }
+          });
+          return;
+        }
+      }
+
       console.log("Routing to alarm challenge screen from intent extras:", extras);
       router.push({
         pathname: '/alarm-challenge' as any,
@@ -205,10 +236,26 @@ export default function RootLayout() {
             params: { alarmId: data.alarmId as string, challengeType: data.challengeType as string }
           });
         } else if (data.type === 'medication') {
-          router.push({
-            pathname: '/medication-reminder',
-            params: { medicationId: data.medicationId as string, doseId: data.doseId as string }
-          });
+          let cleanId = data.alarmId as string || `${data.medicationId}_${data.doseId}`;
+
+          if (cleanId.startsWith('medication_snooze_')) {
+            cleanId = cleanId.replace('medication_snooze_', '');
+          }
+          if (cleanId.endsWith('_snooze')) {
+            cleanId = cleanId.replace('_snooze', '');
+          }
+          const dayMatch = cleanId.match(/_day_\d+$/);
+          if (dayMatch) {
+            cleanId = cleanId.replace(dayMatch[0], '');
+          }
+
+          const parts = cleanId.split('_');
+          if (parts.length >= 2) {
+            router.push({
+              pathname: '/medication-reminder',
+              params: { medicationId: parts[0], doseId: parts[1] }
+            });
+          }
         }
       }
     });
@@ -221,10 +268,27 @@ export default function RootLayout() {
           params: { alarmId: data.alarmId as string, challengeType: data.challengeType as string }
         });
       } else if (data?.type === 'medication') {
-        router.push({
-          pathname: '/medication-reminder',
-          params: { medicationId: data.medicationId as string, doseId: data.doseId as string }
-        });
+        let cleanId = data.alarmId as string || `${data.medicationId}_${data.doseId}`;
+
+        if (cleanId.startsWith('medication_snooze_')) {
+          cleanId = cleanId.replace('medication_snooze_', '');
+        }
+        if (cleanId.endsWith('_snooze')) {
+          cleanId = cleanId.replace('_snooze', '');
+        }
+
+        const dayMatch = cleanId.match(/_day_\d+$/);
+        if (dayMatch) {
+          cleanId = cleanId.replace(dayMatch[0], '');
+        }
+
+        const parts = cleanId.split('_');
+        if (parts.length >= 2) {
+          router.push({
+            pathname: '/medication-reminder',
+            params: { medicationId: parts[0], doseId: parts[1] }
+          });
+        }
       }
     });
 

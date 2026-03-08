@@ -95,7 +95,7 @@ export const es = {
   sound_morning_alarm: 'Alarma Matutina',
   sound_strange_alarm_clock: 'Alarma Extraña',
   sound_wake_up_clock: 'Reloj Despertador',
-  
+
   alarmForm: {
     alarmNameLabel: 'Nombre de la Alarma',
     alarmNamePlaceholder: 'Ej: Despertador Matutino',
@@ -122,7 +122,7 @@ export const es = {
     saveChangesButton: 'Guardar Cambios',
     addAlarmButton: 'Añadir Alarma'
   },
-  
+
   challengeLabels: {
     level: 'Nivel {level}',
     questions: '{count} Preguntas',
@@ -138,7 +138,7 @@ export const es = {
   deleteMedicationConfirm: '¿Estás seguro de que quieres eliminar este medicamento y todos sus recordatorios?',
   noMedicationsAdded: 'No Hay Medicamentos Añadidos',
   addFirstMedication: 'Añade tu primer medicamento para empezar con los recordatorios y el seguimiento.',
-  
+
   // Medication Form
   medicationDetails: 'Detalles del Medicamento',
   medicationNamePlaceholder: 'Ej: Vitamina D',
@@ -178,7 +178,7 @@ export const es = {
     pillsPerDosePositiveError: 'Las píldoras por dosis deben ser un número positivo.',
     lowStockThresholdValidError: 'Por favor, introduce un umbral de stock bajo válido.'
   },
-  
+
   unit_tablet: 'Tableta(s)',
   unit_capsule: 'Cápsula(s)',
   unit_mg: 'mg',
@@ -189,7 +189,7 @@ export const es = {
   unit_unit: 'Unidad(es)',
   unit_patch: 'Parche(s)',
   unit_injection: 'Inyección(es)',
-  
+
   // Medication List Item
   medicationListItem: {
     next: 'Próximo:',
@@ -240,9 +240,9 @@ export const es = {
   'reportsScreen.medStats.skipped': 'Omitidas',
   'reportsScreen.medStats.snoozed': 'Pospuestas',
   eventLogFilters: {
-      allEvents: 'Todos',
-      alarmsEvents: 'Alarmas',
-      medicationsEvents: 'Meds',
+    allEvents: 'Todos',
+    alarmsEvents: 'Alarmas',
+    medicationsEvents: 'Meds',
   },
   aiInsightsTitle: 'Perspectivas con IA',
   geminiAnalysisTitle: 'Análisis de Gemini',
@@ -250,7 +250,7 @@ export const es = {
   analyzeHabits: 'Analizar Mis Hábitos',
   analyzingData: 'Analizando tus datos...',
   aiError: 'No se pudieron obtener las perspectivas. Por favor, comprueba tu conexión o clave de API e inténtalo de nuevo.',
-  
+
   // Event Log Types
   event_alarm_triggered: 'Activada',
   event_alarm_snoozed: 'Pospuesta',
@@ -263,7 +263,7 @@ export const es = {
   event_medication_added: 'Añadido',
   event_medication_updated: 'Actualizado',
   event_medication_deleted: 'Eliminado',
-  
+
   // Settings Screen
   appearance: 'Apariencia',
   theme: 'Tema',
@@ -274,10 +274,30 @@ export const es = {
   language: 'Idioma',
   languageDescription: 'Selecciona el idioma de visualización de la aplicación.',
   notifications: 'Notificaciones',
-  vibrationSettingDescription: 'Activa o desactiva la vibración para todas las notificaciones.',
-  about: 'Acerca de',
-  aboutDescription: 'Aprende más sobre la aplicación y sus características.',
-  
+  vibrationSettingDescription: 'Habilita o deshabilita la vibración para todas las notificaciones.',
+  permissionsStatus: 'Estado de Permisos',
+  permissionsStatusDescription: 'Verificar permisos del sistema y la aplicación.',
+
+  // Permissions Screen
+  enabled: 'Habilitado',
+  disabled: 'Deshabilitado',
+  granted: 'Permitido',
+  denied: 'Denegado',
+  undetermined: 'Indeterminado',
+  enableNow: 'Habilitar Ahora',
+  managePermissions: 'Administrar Permisos',
+  permissionsReasoning: 'La aplicación necesita estos permisos para asegurar que la alarma suene a tiempo y los desafíos funcionen correctamente.',
+  notificationsPermissionDesc: 'Alertarte de alarmas y medicamentos.',
+  cameraPermissionDesc: 'Escanear códigos QR para descartar alarmas.',
+  photosPermissionDesc: 'Añadir fotos de cajas de medicamentos.',
+  exactAlarms: 'Alarmas Exactas',
+  exactAlarmsDesc: 'Asegurar que la alarma suene en el segundo exacto.',
+  batteryOptimization: 'Optimización de Batería',
+  batteryOptimizationDesc: 'Evitar que el sistema cierre la aplicación en segundo plano.',
+  overlayPermission: 'Mostrar Sobre Otras Apps',
+  overlayPermissionDesc: 'Mostrar la pantalla de alarma sobre cualquier otra aplicación.',
+  checkAllPermissions: 'Verificar Todos los Permisos',
+
   // About Screen
   aboutTitle: '¡Acerca de Wake Up!',
   version: 'Versión 1.0.0',
@@ -287,7 +307,7 @@ export const es = {
   challengesExplained: 'Explicación de los Desafíos',
   footer_love: 'Hecho con ❤️ para ayudarte a tener éxito.',
   footer_copyright: '© 2024. Todos los Derechos Reservados.',
-  
+
   feature_smartAlarms_title: 'Alarmas Inteligentes',
   feature_smartAlarms_desc: 'Configura alarmas recurrentes con sonidos y opciones de posponer personalizables.',
   feature_math_title: 'Desafío Matemático',
@@ -307,7 +327,7 @@ export const es = {
   benefit_adherence_desc: 'No te saltes nunca una dosis con recordatorios inteligentes y gestión de inventario.',
   benefit_health_title: 'Mejora el Bienestar',
   benefit_health_desc: 'Empezar bien el día y estar al tanto de tu salud contribuye a un mejor estilo de vida.',
-  
+
   // Alarm Challenge Screen
   timeToWakeUp: '¡Es hora de despertar!',
   mathChallenge: 'Desafío Matemático',
@@ -359,7 +379,7 @@ export const es = {
   grantPermission: 'Conceder Permiso',
   maxSnoozesReached: 'Máximo de pospuestos alcanzado',
   maxSnoozesMessage: 'Ya no puedes posponer esta alarma.',
-  
+
   // Medication Reminder Screen
   medicationReminder: 'Recordatorio de Medicación',
   loadingMedication: 'Cargando detalles de la medicación...',
@@ -372,7 +392,7 @@ export const es = {
   iTookIt: 'La Tomé',
   snooze10min: 'Posponer 10 min',
   skip: 'Omitir',
-  
+
   // Generic
   doseNumbered: 'Dosis {number}',
   hour: 'Hora',

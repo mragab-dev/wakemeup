@@ -1,4 +1,4 @@
-package app.quadravexa.wakemeup
+package com.quadravexa.wakemeup
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
