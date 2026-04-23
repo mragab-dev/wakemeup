@@ -12,7 +12,7 @@ import Switch from '../ui/Switch';
 import { useTheme } from '@/hooks/useTheme';
 import { useSettingsStore } from '@/store/settingsStore';
 import theme from '@/constants/theme';
-import { createDefaultAlarm } from '@/store/alarmStore';
+import { useAlarmStore, createDefaultAlarm } from '@/store/alarmStore';
 import SoundPicker from '../alarms/SoundPicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import ChallengeSelector from '../alarms/ChallengeSelector';
@@ -31,6 +31,7 @@ const AlarmForm: React.FC<AlarmFormProps> = ({ initialAlarm, onSubmit, onCancel 
 
   const { colors } = useTheme();
   const { t } = useSettingsStore();
+  const { scannedQrCode, setScannedQrCode } = useAlarmStore();
   const styles = createStyles(colors);
 
   // Sync internal state with initialAlarm when it changes
@@ -42,14 +43,14 @@ const AlarmForm: React.FC<AlarmFormProps> = ({ initialAlarm, onSubmit, onCancel 
 
   const params = useLocalSearchParams();
 
-  // Effect to update QR code value when returning from scanner
+  // Effect to update QR code value when returning from scanner via store
   useEffect(() => {
-    if (params.scannedData && typeof params.scannedData === 'string' && alarm.challenge.type === ChallengeType.QR_SCAN) {
-      updateChallengeConfig('targetValue', params.scannedData);
-      // Clean the param to avoid re-triggering
-      router.setParams({ scannedData: '' });
+    if (scannedQrCode && alarm.challenge.type === ChallengeType.QR_SCAN) {
+      updateChallengeConfig('targetValue', scannedQrCode);
+      // Clean the store to avoid re-triggering
+      setScannedQrCode(null);
     }
-  }, [params.scannedData]);
+  }, [scannedQrCode]);
 
   const updateAlarmState = (field: keyof Omit<Alarm, 'id'>, value: any) => {
     setAlarm(prev => ({ ...prev, [field]: value }));
@@ -115,10 +116,7 @@ const AlarmForm: React.FC<AlarmFormProps> = ({ initialAlarm, onSubmit, onCancel 
   };
 
   const openQRScanner = () => {
-    router.push({
-      pathname: '/qr-scanner',
-      params: { returnPath: '/alarms' } // The modal is on the alarms tab
-    });
+    router.push('/qr-scanner');
   };
 
   const showRepeatSwitch = alarm.days.some(d => d);

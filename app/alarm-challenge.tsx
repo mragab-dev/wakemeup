@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, BackHandler, Platform, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, BackHandler, Platform, Keyboard, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -12,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ChallengeType, MathChallengeConfig, WordPuzzleConfig, QRScanConfig, Alarm } from '@/types';
+import AdBanner from '@/components/ui/AdBanner';
 import { generateMathProblems, generateWordPuzzles } from '@/utils/challengeHelpers';
 import { getSoundAsset } from '@/constants/sounds';
 import { CHALLENGE_DIFFICULTY_LEVELS } from '@/constants/alarmConstants';
@@ -60,7 +62,7 @@ export default function AlarmChallengeScreen() {
 
   const { colors } = useTheme();
   const { t, language } = useSettingsStore();
-  const { alarms, updateAlarm } = useAlarmStore();
+  const { alarms, updateAlarm, scannedQrCode, setScannedQrCode } = useAlarmStore();
   const { addEvent } = useEventLogStore();
 
   const [params, setParams] = useState<{
@@ -85,7 +87,9 @@ export default function AlarmChallengeScreen() {
   // Strip suffixes like _day_N or _snooze from alarmId for lookup
   const cleanAlarmId = params.alarmId?.split('_')[0];
   const alarm = alarms.find(a => a.id === cleanAlarmId);
-  const styles = createStyles(colors);
+  const { top } = useSafeAreaInsets();
+
+  const styles = createStyles(colors, top);
 
   useEffect(() => {
     return () => {
@@ -165,7 +169,7 @@ export default function AlarmChallengeScreen() {
     const snoozeTime = Date.now() + alarm.snooze.durationMinutes * 60 * 1000;
 
     if (Platform.OS === 'android') {
-      nativeAlarm.scheduleAlarm(`${alarm.id}_snooze`, `${alarm.name} (${t('snoozed')})`, alarm.challenge.type, alarm.sound, 'alarm', snoozeTime);
+      nativeAlarm.scheduleAlarm(`${alarm.id}_snooze`, `${alarm.name} (${t('snoozed')})`, alarm.challenge.type, alarm.sound, 'alarm', snoozeCount + 1, snoozeTime);
     } else {
       const notificationContent: Notifications.NotificationContentInput = {
         title: `🚨 ${alarm.name} (${t('snoozed')})`,
@@ -199,7 +203,7 @@ export default function AlarmChallengeScreen() {
   };
 
   const finalizeSnoozeAndExit = () => {
-    nativeAlarm.stopAlarmService();
+    nativeAlarm.stopAlarmService(params.alarmId);
     router.replace('/(tabs)');
   };
 
@@ -211,7 +215,7 @@ export default function AlarmChallengeScreen() {
     console.log('Stopping everything (native sound & vibration)...');
     try {
       if (Platform.OS === 'android' && AlarmModule) {
-        AlarmModule.stopAlarmService();
+        AlarmModule.stopAlarmService(params.alarmId);
       }
     } catch (e) {
       console.error('Error in stopEverything:', e);
@@ -231,10 +235,11 @@ export default function AlarmChallengeScreen() {
 
 
   useEffect(() => {
-    if (scannedData && challengeType === ChallengeType.QR_SCAN) {
-      handleQRScanResult(scannedData);
+    if (scannedQrCode && challengeType === ChallengeType.QR_SCAN) {
+      handleQRScanResult(scannedQrCode);
+      setScannedQrCode(null); // Clean up the store
     }
-  }, [scannedData]);
+  }, [scannedQrCode]);
 
   const generateNewChallenge = async () => {
     if (!alarm || !alarm.challenge) return;
@@ -333,20 +338,27 @@ export default function AlarmChallengeScreen() {
       if (currentQuestionIndex + 1 < totalQuestions) {
         setCurrentQuestionIndex(prev => prev + 1);
         setUserAnswer('');
-        setAttempts(0);
-        setFeedback({ message: language === 'ar' ? 'إجابة صحيحة' : 'Correct answer', type: 'success' });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         setIsCompleted(true);
-        setFeedback({ message: language === 'ar' ? 'يجب أن يتوقف المنبه' : 'Alarm should stop', type: 'success' });
+        setFeedback({ message: language === 'ar' ? 'نجاح!' : 'Success!', type: 'success' });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Notifications.cancelScheduledNotificationAsync(`snooze_alarm_${alarm.id}`);
-        await handleDismissFlow(alarm);
+
+        if (currentQuestionIndex + 1 >= totalQuestions) {
+          setIsCompleted(true);
+          Notifications.cancelScheduledNotificationAsync(`snooze_alarm_${alarm.id}`);
+          await handleDismissFlow(alarm);
+        } else {
+          setTimeout(() => {
+            setCurrentQuestionIndex(prev => prev + 1);
+            setFeedback({ message: '', type: null });
+            setUserAnswer('');
+          }, 1000);
+        }
       }
     } else {
       setAttempts(prev => prev + 1);
       setUserAnswer('');
-      setFeedback({ message: language === 'ar' ? 'المنبه لن يتوقف' : 'Alarm should not stop', type: 'error' });
+      setFeedback({ message: language === 'ar' ? 'إجابة خاطئة' : 'Wrong answer', type: 'error' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       if (attempts >= 2) {
         Alert.alert(
@@ -402,29 +414,20 @@ export default function AlarmChallengeScreen() {
 
 
   const handleOpenQRScanner = () => {
-    if (!alarm) return;
-    router.push({
-      pathname: '/qr-scanner',
-      params: {
-        returnPath: '/alarm-challenge',
-        alarmId: alarm.id,
-        challengeType: alarm.challenge.type,
-        snoozeCount: params.snoozeCount,
-      }
-    });
+    router.push('/qr-scanner');
   };
 
   const handleQRScanResult = async (data: string) => {
     if (!challenge || !alarm) return;
     if (data === challenge.answer) {
       setIsCompleted(true);
-      setFeedback({ message: language === 'ar' ? 'يجب أن يتوقف المنبه' : 'Alarm should stop', type: 'success' });
+      setFeedback({ message: language === 'ar' ? 'نجاح!' : 'Success!', type: 'success' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Notifications.cancelScheduledNotificationAsync(`snooze_alarm_${alarm.id}`);
       await handleDismissFlow(alarm);
     } else {
       setAttempts(prev => prev + 1);
-      setFeedback({ message: language === 'ar' ? 'المنبه لن يتوقف' : 'Alarm should not stop', type: 'error' });
+      setFeedback({ message: t('wrongQrCode'), type: 'error' });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert(t('errorTitle'), t('wrongQrCode'));
     }
@@ -441,124 +444,154 @@ export default function AlarmChallengeScreen() {
   const formattedTime = new Date().toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <View style={styles.container}>
-      {/* AdMob is handled via InterstitialAd.show() */}
-      <View style={styles.header}>
-        <Bell size={64} color="white" />
-        <Text style={styles.alarmName}>{alarm.name}</Text>
-        <Text style={styles.currentRealTime}>{formattedTime}</Text>
-        <View style={styles.alarmTimeBadge}>
-          <Text style={styles.alarmTimeText}>{alarm.time}</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoidingView}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* AdMob is handled via InterstitialAd.show() */}
+        <View style={styles.header}>
+          <Bell size={64} color="white" />
+          <Text style={styles.alarmName}>{alarm.name}</Text>
+          <Text style={styles.currentRealTime}>{formattedTime}</Text>
+          <View style={styles.alarmTimeBadge}>
+            <Text style={styles.alarmTimeText}>{alarm.time}</Text>
+          </View>
+          {totalQuestions > 1 && params.challengeType === ChallengeType.MATH && (
+            <Text style={styles.progress}>
+              {t('questionProgress', { current: currentQuestionIndex + 1, total: totalQuestions })}
+            </Text>
+          )}
         </View>
-        {totalQuestions > 1 && params.challengeType === ChallengeType.MATH && (
-          <Text style={styles.progress}>
-            {t('questionProgress', { current: currentQuestionIndex + 1, total: totalQuestions })}
-          </Text>
-        )}
-      </View>
 
-      <View style={styles.challengeContainer}>
-        <View style={styles.challengeIcon}>
-          {params.challengeType === ChallengeType.NONE && <Bell size={32} color={colors.primary} />}
-          {params.challengeType === ChallengeType.MATH && <Calculator size={32} color={colors.primary} />}
-          {params.challengeType === ChallengeType.WORD_PUZZLE && <FileText size={32} color={colors.primary} />}
-          {params.challengeType === ChallengeType.QR_SCAN && <QrCode size={32} color={colors.primary} />}
+        <View style={styles.challengeContainer}>
+          <View style={styles.challengeIcon}>
+            {params.challengeType === ChallengeType.NONE && <Bell size={32} color={colors.primary} />}
+            {params.challengeType === ChallengeType.MATH && <Calculator size={32} color={colors.primary} />}
+            {params.challengeType === ChallengeType.WORD_PUZZLE && <FileText size={32} color={colors.primary} />}
+            {params.challengeType === ChallengeType.QR_SCAN && <QrCode size={32} color={colors.primary} />}
+          </View>
+          <Text style={styles.challengeTitle}>{params.challengeType === ChallengeType.NONE ? t('timeToWakeUp') : t(params.challengeType + 'Challenge')}</Text>
+          {params.challengeType !== ChallengeType.NONE && (
+            <Text style={[
+              styles.question,
+              params.challengeType === ChallengeType.MATH && { writingDirection: 'ltr' }
+            ]}>
+              {params.challengeType === ChallengeType.MATH ? `\u200E${challenge.question}\u200E` : challenge.question}
+            </Text>
+          )}
+
+          {'instruction' in challenge && challenge.instruction && (
+            <Text style={styles.instruction}>{challenge.instruction}</Text>
+          )}
+
+          {params.challengeType !== ChallengeType.QR_SCAN && params.challengeType !== ChallengeType.NONE && (
+            <Input
+              value={userAnswer}
+              onChangeText={setUserAnswer}
+              placeholder={t('enterAnswerPlaceholder')}
+              style={styles.input}
+              autoFocus
+              keyboardType={params.challengeType === ChallengeType.MATH ? 'numeric' : 'default'}
+              autoCapitalize={params.challengeType === ChallengeType.WORD_PUZZLE ? 'characters' : 'none'}
+            />
+          )}
+
+          {feedback.type && (
+            <Text style={[styles.feedbackText, feedback.type === 'error' ? styles.errorText : styles.successFeedbackText]}>
+              {feedback.message}
+            </Text>
+          )}
+
+          {attempts > 0 && <Text style={styles.attemptsText}>{t('incorrectAttempts', { attempts })}</Text>}
+          {isCompleted && <Text style={styles.successText}>{t('correctDismissing')}</Text>}
         </View>
-        <Text style={styles.challengeTitle}>{params.challengeType === ChallengeType.NONE ? t('timeToWakeUp') : t(params.challengeType + 'Challenge')}</Text>
-        {params.challengeType !== ChallengeType.NONE && (
-          <Text style={[
-            styles.question,
-            params.challengeType === ChallengeType.MATH && { writingDirection: 'ltr' }
-          ]}>
-            {params.challengeType === ChallengeType.MATH ? `\u200E${challenge.question}\u200E` : challenge.question}
-          </Text>
-        )}
 
-        {'instruction' in challenge && challenge.instruction && (
-          <Text style={styles.instruction}>{challenge.instruction}</Text>
-        )}
+        <View style={styles.actions}>
+          {params.challengeType === ChallengeType.NONE ? (
+            <View style={styles.noneActions}>
+              {alarm.snooze.enabled && params.snoozeCount! < alarm.snooze.maxCount && (
+                <Button
+                  title={t('snoozeWithAd', {
+                    minutes: alarm.snooze.durationMinutes
+                  })}
+                  onPress={handleSnooze}
+                  variant="outline"
+                  style={[styles.snoozeButton, { flex: 1 }]}
+                  textStyle={styles.snoozeButtonText}
+                  leftIcon={<VideoIcon size={18} color={colors.primary} />}
+                  disabled={isCompleted}
+                />
+              )}
+              <Button
+                title={t('stop') || 'STOP'}
+                onPress={handleSimpleDismiss}
+                style={[styles.submitButton, { flex: 1, backgroundColor: colors.error, marginLeft: (alarm.snooze.enabled && params.snoozeCount! < alarm.snooze.maxCount) ? theme.spacing.sm : 0 }]}
+                disabled={isCompleted}
+              />
+            </View>
+          ) : params.challengeType === ChallengeType.QR_SCAN ? (
+            <Button
+              title={language === 'ar' ? 'مسح رمز QR للتوقف' : 'Scan QR to Stop'}
+              onPress={handleOpenQRScanner}
+              fullWidth
+              style={styles.submitButton}
+              leftIcon={<Camera size={20} color="white" />}
+            />
+          ) : (
+            <Button
+              title={currentQuestionIndex + 1 < totalQuestions ? t('nextQuestion') : (language === 'ar' ? 'فحص الإجابة' : 'CHECK')}
+              onPress={handleSubmit}
+              disabled={!userAnswer.trim() || isCompleted}
+              fullWidth
+              style={styles.submitButton}
+            />
+          )}
 
-        {params.challengeType !== ChallengeType.QR_SCAN && params.challengeType !== ChallengeType.NONE && (
-          <Input
-            value={userAnswer}
-            onChangeText={setUserAnswer}
-            placeholder={t('enterAnswerPlaceholder')}
-            style={styles.input}
-            autoFocus
-            keyboardType={params.challengeType === ChallengeType.MATH ? 'numeric' : 'default'}
-            autoCapitalize={params.challengeType === ChallengeType.WORD_PUZZLE ? 'characters' : 'none'}
-          />
-        )}
-
-        {feedback.type && (
-          <Text style={[styles.feedbackText, feedback.type === 'error' ? styles.errorText : styles.successFeedbackText]}>
-            {feedback.message}
-          </Text>
-        )}
-
-        {attempts > 0 && <Text style={styles.attemptsText}>{t('incorrectAttempts', { attempts })}</Text>}
-        {isCompleted && <Text style={styles.successText}>{t('correctDismissing')}</Text>}
-      </View>
-
-      <View style={styles.actions}>
-        {params.challengeType === ChallengeType.NONE ? (
-          <View style={styles.noneActions}>
+          {params.challengeType !== ChallengeType.NONE && alarm.snooze.enabled && params.snoozeCount! < alarm.snooze.maxCount && (
             <Button
               title={t('snoozeWithAd', {
                 minutes: alarm.snooze.durationMinutes
               })}
               onPress={handleSnooze}
               variant="outline"
-              style={[styles.snoozeButton, { flex: 1 }]}
+              fullWidth
+              style={styles.snoozeButton}
               textStyle={styles.snoozeButtonText}
               leftIcon={<VideoIcon size={18} color={colors.primary} />}
-              disabled={isCompleted || params.snoozeCount! >= alarm.snooze.maxCount}
-            />
-            <Button
-              title={t('stop') || 'STOP'}
-              onPress={handleSimpleDismiss}
-              style={[styles.submitButton, { flex: 1, backgroundColor: colors.error }]}
               disabled={isCompleted}
             />
-          </View>
-        ) : params.challengeType === ChallengeType.QR_SCAN ? (
-          <Button
-            title={language === 'ar' ? 'مسح رمز QR للتوقف' : 'Scan QR to Stop'}
-            onPress={handleOpenQRScanner}
-            fullWidth
-            style={styles.submitButton}
-            leftIcon={<Camera size={20} color="white" />}
-          />
-        ) : (
-          <Button
-            title={currentQuestionIndex + 1 < totalQuestions ? t('nextQuestion') : (language === 'ar' ? 'فحص الإجابة' : 'CHECK')}
-            onPress={handleSubmit}
-            disabled={!userAnswer.trim() || isCompleted}
-            fullWidth
-            style={styles.submitButton}
-          />
-        )}
-
-        {params.challengeType !== ChallengeType.NONE && alarm.snooze.enabled && (
-          <Button
-            title={t('snoozeWithAd', {
-              minutes: alarm.snooze.durationMinutes
-            })}
-            onPress={handleSnooze}
-            variant="outline"
-            fullWidth
-            style={styles.snoozeButton}
-            textStyle={styles.snoozeButtonText}
-            leftIcon={<VideoIcon size={18} color={colors.primary} />}
-            disabled={isCompleted || params.snoozeCount! >= alarm.snooze.maxCount}
-          />
-        )}
+          )}
+        </View>
+      </ScrollView>
+      <View style={styles.bannerContainer}>
+        <AdBanner />
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, topInset: number) => StyleSheet.create({
+  keyboardAvoidingView: {
+    flex: 1,
+    backgroundColor: colors.primary,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    padding: theme.spacing.lg,
+    paddingTop: Math.max(theme.spacing.lg, topInset + theme.spacing.sm),
+    paddingBottom: 100, // Space for the banner
+  },
+  bannerContainer: {
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    backgroundColor: 'white',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: colors.primary,

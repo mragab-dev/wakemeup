@@ -13,6 +13,7 @@ import { Plus, Bell, Pill } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useSettingsStore } from '@/store/settingsStore';
 import { ChallengeType } from '@/types';
+import PermissionWarningBanner from '@/components/home/PermissionWarningBanner';
 
 interface UpcomingItem {
   type: 'alarm' | 'medication';
@@ -130,6 +131,8 @@ export default function DashboardScreen() {
         <Text style={styles.title}>{t('wakeUpTitle')}</Text>
         <Text style={styles.subtitle}>{t('wakeUpSubtitle')}</Text>
       </View>
+
+      <PermissionWarningBanner />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>

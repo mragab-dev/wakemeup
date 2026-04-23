@@ -18,6 +18,8 @@ import {
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { Language } from '@/constants/locales';
+import { updateKeepAliveServiceStatus } from '@/utils/keepAliveHelper';
+import { Activity } from 'lucide-react-native';
 
 const languageOptions = [
   { code: 'en' as Language, name: 'English', nativeName: 'English' },
@@ -39,6 +41,7 @@ export default function SettingsScreen() {
     theme: currentTheme,
     language,
     vibrationEnabled,
+    keepAliveEnabled,
     updateSettings,
     t
   } = useSettingsStore();
@@ -58,6 +61,30 @@ export default function SettingsScreen() {
   const getCurrentLanguageName = () => {
     const current = languageOptions.find(lang => lang.code === language);
     return current ? `${current.nativeName} (${current.name})` : 'English';
+  };
+
+  const handleKeepAliveToggle = (value: boolean) => {
+    if (!value) {
+      Alert.alert(
+        t('disableKeepAliveWarningTitle'),
+        t('disableKeepAliveWarningMessage'),
+        [
+          { text: t('cancel'), style: 'cancel' },
+          {
+            text: t('confirm') || (language === 'ar' ? 'تأكيد' : 'Confirm'),
+            style: 'destructive',
+            onPress: () => {
+              updateSettings({ keepAliveEnabled: false });
+              // Small delay to ensure state is updated before service check
+              setTimeout(() => updateKeepAliveServiceStatus(), 100);
+            }
+          },
+        ]
+      );
+    } else {
+      updateSettings({ keepAliveEnabled: true });
+      setTimeout(() => updateKeepAliveServiceStatus(), 100);
+    }
   };
 
   const getCurrentThemeName = () => {
@@ -143,7 +170,7 @@ export default function SettingsScreen() {
             <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
-          <View style={[styles.settingItem, { borderBottomWidth: 0 }]}>
+          <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconContainer, { backgroundColor: colors.warning + '20' }]}>
                 <Bell size={20} color={colors.warning} />
@@ -156,6 +183,22 @@ export default function SettingsScreen() {
             <Switch
               value={vibrationEnabled}
               onValueChange={(value) => updateSettings({ vibrationEnabled: value })}
+            />
+          </View>
+
+          <View style={[styles.settingItem, { borderBottomWidth: 0 }]}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.info + '20' }]}>
+                <Activity size={20} color={colors.info} />
+              </View>
+              <View style={{ flex: 1, flexShrink: 1 }}>
+                <Text style={styles.settingLabel}>{t('keepAliveSetting')}</Text>
+                <Text style={styles.settingDescription}>{t('keepAliveSettingDescription')}</Text>
+              </View>
+            </View>
+            <Switch
+              value={keepAliveEnabled}
+              onValueChange={handleKeepAliveToggle}
             />
           </View>
         </Card>

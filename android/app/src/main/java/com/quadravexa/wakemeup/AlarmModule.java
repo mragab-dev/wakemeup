@@ -28,7 +28,8 @@ public class AlarmModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void scheduleAlarm(String alarmId, String alarmName, String challengeType, String ringtoneUri, String type, double timestamp) {
+    public void scheduleAlarm(String alarmId, String alarmName, String challengeType, String ringtoneUri, String type,
+            int snoozeCount, double timestamp) {
         Context context = getReactApplicationContext();
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
@@ -38,17 +39,30 @@ public class AlarmModule extends ReactContextBaseJavaModule {
         intent.putExtra("challengeType", challengeType);
         intent.putExtra("ringtoneUri", ringtoneUri);
         intent.putExtra("type", type);
+        intent.putExtra("snoozeCount", snoozeCount);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 context,
                 alarmId.hashCode(),
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         long triggerAtMillis = (long) timestamp;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        // PendingIntent to open the app when the user clicks on the alarm info in
+        // system UI
+        Intent showIntent = new Intent(context, MainActivity.class);
+        PendingIntent showPendingIntent = PendingIntent.getActivity(
+                context,
+                (alarmId + "_show").hashCode(),
+                showIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            AlarmManager.AlarmClockInfo alarmClockInfo = new AlarmManager.AlarmClockInfo(triggerAtMillis,
+                    showPendingIntent);
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
@@ -56,7 +70,7 @@ public class AlarmModule extends ReactContextBaseJavaModule {
             alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent);
         }
 
-        Log.d(TAG, "Scheduled alarm " + alarmId + " for " + triggerAtMillis);
+        Log.d(TAG, "Scheduled alarm " + alarmId + " using setAlarmClock for " + triggerAtMillis);
     }
 
     @ReactMethod
@@ -69,26 +83,33 @@ public class AlarmModule extends ReactContextBaseJavaModule {
                 context,
                 alarmId.hashCode(),
                 intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         alarmManager.cancel(pendingIntent);
         Log.d(TAG, "Cancelled alarm " + alarmId);
     }
 
     @ReactMethod
-    public void stopAlarmService() {
+    public void stopAlarmService(String alarmId) {
         Context context = getReactApplicationContext();
-        if (context == null) return;
-        
-        Log.d(TAG, "stopAlarmService called from JS");
+        if (context == null)
+            return;
+
+        Log.d(TAG, "stopAlarmService called from JS for alarmId: " + alarmId);
         Intent intent = new Intent(context, AlarmService.class);
         intent.setAction("STOP_ALARM");
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent);
-        } else {
-            context.startService(intent);
+        if (alarmId != null) {
+            intent.putExtra("alarmId", alarmId);
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping alarm service", e);
         }
     }
 
@@ -126,7 +147,8 @@ public class AlarmModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void requestOverlayPermission() {
-        if (getReactApplicationContext() == null) return;
+        if (getReactApplicationContext() == null)
+            return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String packageName = getReactApplicationContext().getPackageName();
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName));
@@ -146,7 +168,8 @@ public class AlarmModule extends ReactContextBaseJavaModule {
             return;
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            AlarmManager alarmManager = (AlarmManager) getReactApplicationContext().getSystemService(Context.ALARM_SERVICE);
+            AlarmManager alarmManager = (AlarmManager) getReactApplicationContext()
+                    .getSystemService(Context.ALARM_SERVICE);
             promise.resolve(alarmManager.canScheduleExactAlarms());
         } else {
             promise.resolve(true);
@@ -155,10 +178,12 @@ public class AlarmModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void requestIgnoreBatteryOptimizations() {
-        if (getReactApplicationContext() == null) return;
+        if (getReactApplicationContext() == null)
+            return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             String packageName = getReactApplicationContext().getPackageName();
-            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:" + packageName));
+            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:" + packageName));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
                 getReactApplicationContext().startActivity(intent);
@@ -170,7 +195,8 @@ public class AlarmModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void requestExactAlarmPermission() {
-        if (getReactApplicationContext() == null) return;
+        if (getReactApplicationContext() == null)
+            return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -189,11 +215,38 @@ public class AlarmModule extends ReactContextBaseJavaModule {
             promise.resolve(false);
             return;
         }
-        android.app.KeyguardManager km = (android.app.KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        android.app.KeyguardManager km = (android.app.KeyguardManager) context
+                .getSystemService(Context.KEYGUARD_SERVICE);
         if (km != null) {
             promise.resolve(km.isKeyguardLocked());
         } else {
             promise.resolve(false);
         }
+    }
+
+    @ReactMethod
+    public void startKeepAliveService(String title, String content) {
+        Context context = getReactApplicationContext();
+        Intent intent = new Intent(context, AlarmService.class);
+        intent.setAction("START_KEEP_ALIVE");
+        intent.putExtra("keepAliveTitle", title);
+        intent.putExtra("keepAliveContent", content);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting Keep-Alive service", e);
+        }
+    }
+
+    @ReactMethod
+    public void stopKeepAliveService() {
+        Context context = getReactApplicationContext();
+        Intent intent = new Intent(context, AlarmService.class);
+        intent.setAction("STOP_KEEP_ALIVE");
+        context.startService(intent);
     }
 }

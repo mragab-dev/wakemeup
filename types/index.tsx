@@ -57,7 +57,7 @@ export interface MedicationDose {
 }
 
 export interface Medication {
-  id:string;
+  id: string;
   name: string;
   dosage: string; // The numeric part of the dose, e.g., "1", "500"
   dosageUnit: string; // The unit, e.g., "tablet", "mg"
@@ -84,11 +84,11 @@ export interface MedicationAdherenceDetail {
 }
 
 // Event Log Types
-export type EventType = 
-  | 'alarm_triggered' 
-  | 'alarm_snoozed' 
-  | 'alarm_dismissed' 
-  | 'medication_taken' 
+export type EventType =
+  | 'alarm_triggered'
+  | 'alarm_snoozed'
+  | 'alarm_dismissed'
+  | 'medication_taken'
   | 'medication_skipped'
   | 'medication_snoozed'
   | 'medication_refilled'
@@ -113,4 +113,5 @@ export interface AppSettings {
   notificationSound: string;
   vibrationEnabled: boolean;
   exportDataFormat: 'csv' | 'json';
+  keepAliveEnabled: boolean;
 }

@@ -36,6 +36,12 @@ const MedicationForm: React.FC<MedicationFormProps> = ({ initialMedication, onSu
   const styles = createStyles(colors);
 
   useEffect(() => {
+    if (initialMedication) {
+      setMedication(initialMedication);
+    }
+  }, [initialMedication]);
+
+  useEffect(() => {
     if (medication.trackInventory && medication.totalCount && medication.pillsPerDose && medication.doses.length > 0) {
       setDaysToEmpty(calculateDaysToEmpty(medication as Medication));
     } else {

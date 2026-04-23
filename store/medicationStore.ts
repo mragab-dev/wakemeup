@@ -9,6 +9,7 @@ import { DOSAGE_UNITS } from '@/constants/medicationConstants';
 import { lightColors } from '@/constants/colors';
 import nativeAlarm from '@/utils/nativeAlarm';
 import { ChallengeType } from '@/types';
+import { updateKeepAliveServiceStatus } from '@/utils/keepAliveHelper';
 
 interface MedicationState {
   medications: Medication[];
@@ -33,10 +34,15 @@ const scheduleMedicationNotifications = async (medication: Medication) => {
 
   // Cancel existing notifications for this medication
   if (Platform.OS === 'android') {
+    // Collect all doses to cancel them
+    medication.doses.forEach(dose => {
+      nativeAlarm.cancelAlarm(`${medication.id}_${dose.id}`);
+      for (let i = 0; i < 7; i++) {
+        nativeAlarm.cancelAlarm(`${medication.id}_${dose.id}_day_${i}`);
+      }
+    });
+    // Also cancel the base ID and some legacy patterns just in case
     nativeAlarm.cancelAlarm(medication.id);
-    for (let i = 0; i < 7; i++) {
-      nativeAlarm.cancelAlarm(`${medication.id}_dose_${i}`);
-    }
   }
 
   const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
@@ -70,6 +76,7 @@ const scheduleMedicationNotifications = async (medication: Medication) => {
           ChallengeType.NONE,
           '', // Default sound
           'medication',
+          0,
           medTime.getTime()
         );
       } else {
@@ -90,6 +97,7 @@ const scheduleMedicationNotifications = async (medication: Medication) => {
             ChallengeType.NONE,
             '',
             'medication',
+            0,
             medTime.getTime()
           );
         }
@@ -168,6 +176,7 @@ export const useMedicationStore = create<MedicationState>()(
 
         if (Platform.OS !== 'web') {
           scheduleMedicationNotifications(newMedication);
+          updateKeepAliveServiceStatus();
         }
       },
 
@@ -181,6 +190,7 @@ export const useMedicationStore = create<MedicationState>()(
             const medication = updatedMedications.find(m => m.id === id);
             if (medication) {
               scheduleMedicationNotifications(medication);
+              updateKeepAliveServiceStatus();
             }
           }
 
@@ -189,6 +199,17 @@ export const useMedicationStore = create<MedicationState>()(
       },
 
       deleteMedication: (id) => {
+        const medication = get().medications.find(m => m.id === id);
+        if (medication && Platform.OS === 'android') {
+          medication.doses.forEach(dose => {
+            nativeAlarm.cancelAlarm(`${medication.id}_${dose.id}`);
+            for (let i = 0; i < 7; i++) {
+              nativeAlarm.cancelAlarm(`${medication.id}_${dose.id}_day_${i}`);
+            }
+          });
+          nativeAlarm.cancelAlarm(medication.id);
+        }
+
         set((state) => ({
           medications: state.medications.filter((medication) => medication.id !== id)
         }));
@@ -202,6 +223,7 @@ export const useMedicationStore = create<MedicationState>()(
               }
             });
           });
+          updateKeepAliveServiceStatus();
         }
       },
 
@@ -220,6 +242,7 @@ export const useMedicationStore = create<MedicationState>()(
             const medication = updatedMedications.find(m => m.id === medicationId);
             if (medication) {
               scheduleMedicationNotifications(medication);
+              updateKeepAliveServiceStatus();
             }
           }
 
@@ -244,6 +267,7 @@ export const useMedicationStore = create<MedicationState>()(
             const medication = updatedMedications.find(m => m.id === medicationId);
             if (medication) {
               scheduleMedicationNotifications(medication);
+              updateKeepAliveServiceStatus();
             }
           }
 
@@ -266,6 +290,7 @@ export const useMedicationStore = create<MedicationState>()(
             const medication = updatedMedications.find(m => m.id === medicationId);
             if (medication) {
               scheduleMedicationNotifications(medication);
+              updateKeepAliveServiceStatus();
             }
           }
 
@@ -311,6 +336,7 @@ export const useMedicationStore = create<MedicationState>()(
             state.medications.forEach(medication => {
               scheduleMedicationNotifications(medication);
             });
+            updateKeepAliveServiceStatus();
           }, 1000);
         }
       },

@@ -7,6 +7,7 @@ import { Platform } from 'react-native';
 import { DEFAULT_CHALLENGE_SETTINGS } from '@/constants/alarmConstants';
 import { getNotificationSound } from '@/constants/sounds';
 import nativeAlarm from '@/utils/nativeAlarm';
+import { updateKeepAliveServiceStatus } from '@/utils/keepAliveHelper';
 
 interface AlarmState {
   alarms: Alarm[];
@@ -15,12 +16,14 @@ interface AlarmState {
   deleteAlarm: (id: string) => void;
   toggleAlarmEnabled: (id: string) => void;
   rescheduleAllAlarms: () => void;
+  scannedQrCode: string | null;
+  setScannedQrCode: (data: string | null) => void;
 }
 
 // Cancel all notifications for a specific alarm
 const cancelAlarmNotifications = async (alarmId: string) => {
   if (Platform.OS === 'web') return;
-  
+
   if (Platform.OS === 'android') {
     nativeAlarm.cancelAlarm(alarmId);
     // Also cancel any per-day identifiers if they were scheduled via native
@@ -30,9 +33,9 @@ const cancelAlarmNotifications = async (alarmId: string) => {
   }
 
   // Cancel expo notifications as well for compatibility
-  await Notifications.cancelScheduledNotificationAsync(`alarm_${alarmId}`).catch(() => {});
+  await Notifications.cancelScheduledNotificationAsync(`alarm_${alarmId}`).catch(() => { });
   for (let i = 0; i < 7; i++) {
-    await Notifications.cancelScheduledNotificationAsync(`alarm_${alarmId}_day_${i}`).catch(() => {});
+    await Notifications.cancelScheduledNotificationAsync(`alarm_${alarmId}_day_${i}`).catch(() => { });
   }
 };
 
@@ -41,7 +44,7 @@ const scheduleAlarmNotification = async (alarm: Alarm) => {
   if (Platform.OS === 'web') {
     return;
   }
-  
+
   await cancelAlarmNotifications(alarm.id);
 
   if (!alarm.isEnabled) {
@@ -91,8 +94,8 @@ const scheduleAlarmNotification = async (alarm: Alarm) => {
           dayDifference += 7;
         }
         alarmTime.setDate(now.getDate() + dayDifference);
-        
-        nativeAlarm.scheduleAlarm(`${alarm.id}_day_${dayIndex}`, alarm.name, alarm.challenge.type, alarm.sound, 'alarm', alarmTime.getTime());
+
+        nativeAlarm.scheduleAlarm(`${alarm.id}_day_${dayIndex}`, alarm.name, alarm.challenge.type, alarm.sound, 'alarm', 0, alarmTime.getTime());
       } else {
         try {
           await Notifications.scheduleNotificationAsync({
@@ -111,7 +114,7 @@ const scheduleAlarmNotification = async (alarm: Alarm) => {
         }
       }
     }
-  } 
+  }
   // Case 2: One-time alarm (either no days selected, or repeats is false)
   else {
     console.log(`Scheduling one-time alarm for ${alarm.name}`);
@@ -150,7 +153,7 @@ const scheduleAlarmNotification = async (alarm: Alarm) => {
     }
 
     if (Platform.OS === 'android') {
-      nativeAlarm.scheduleAlarm(alarm.id, alarm.name, alarm.challenge.type, alarm.sound, 'alarm', nextTriggerDate.getTime());
+      nativeAlarm.scheduleAlarm(alarm.id, alarm.name, alarm.challenge.type, alarm.sound, 'alarm', 0, nextTriggerDate.getTime());
     } else {
       const secondsUntilTrigger = (nextTriggerDate.getTime() - now.getTime()) / 1000;
       if (secondsUntilTrigger <= 0) return;
@@ -268,16 +271,19 @@ export const useAlarmStore = create<AlarmState>()(
   persist(
     (set, get) => ({
       alarms: [],
-      
+      scannedQrCode: null,
+      setScannedQrCode: (data) => set({ scannedQrCode: data }),
+
       addAlarm: (alarm) => {
         const newAlarm = { ...alarm, id: Date.now().toString() };
         set((state) => ({
           alarms: [...state.alarms, newAlarm]
         }));
-        
+
         scheduleAlarmNotification(newAlarm);
+        updateKeepAliveServiceStatus();
       },
-      
+
       updateAlarm: (id, updatedAlarm) => {
         let fullUpdatedAlarm: Alarm | undefined;
         set((state) => {
@@ -290,20 +296,22 @@ export const useAlarmStore = create<AlarmState>()(
           });
           return { alarms: updatedAlarms };
         });
-        
+
         if (fullUpdatedAlarm) {
           scheduleAlarmNotification(fullUpdatedAlarm);
+          updateKeepAliveServiceStatus();
         }
       },
-      
+
       deleteAlarm: (id) => {
         set((state) => ({
           alarms: state.alarms.filter((alarm) => alarm.id !== id)
         }));
-        
+
         cancelAlarmNotifications(id);
+        updateKeepAliveServiceStatus();
       },
-      
+
       toggleAlarmEnabled: (id) => {
         let updatedAlarm: Alarm | undefined;
         set((state) => {
@@ -319,9 +327,10 @@ export const useAlarmStore = create<AlarmState>()(
 
         if (updatedAlarm) {
           scheduleAlarmNotification(updatedAlarm);
+          updateKeepAliveServiceStatus();
         }
       },
-      
+
       rescheduleAllAlarms: () => {
         const alarms = get().alarms;
         rescheduleAllAlarms(alarms).catch(error => {
@@ -338,6 +347,7 @@ export const useAlarmStore = create<AlarmState>()(
             rescheduleAllAlarms(state.alarms).catch(error => {
               console.error('Failed to reschedule alarms on rehydrate:', error);
             });
+            updateKeepAliveServiceStatus();
           }, 1000);
         }
       },

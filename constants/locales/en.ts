@@ -409,4 +409,17 @@ export const en = {
   challengeSummary_math: 'Math',
   challengeSummary_word: 'Word Puzzle',
   challengeSummary_qrcode: 'QR Scan',
+
+  // Permissions Banner
+  permissionsRequired: 'Permissions Required',
+  permissionWarningDescription: 'For the alarm to ring reliably, the following settings must be enabled:',
+  permission_battery: 'Ignore Battery Optimization',
+  permission_overlay: 'Draw Over Other Apps',
+  permission_exact_alarm: 'Schedule Exact Alarms',
+  keepAliveTitle: 'WakeMeUp',
+  keepAliveContent: 'Alarm active for accuracy',
+  keepAliveSetting: 'Keep-Alive Service',
+  keepAliveSettingDescription: 'Maintain a persistent connection in the background to ensure alarms trigger with maximum reliability.',
+  disableKeepAliveWarningTitle: 'Disable Keep-Alive?',
+  disableKeepAliveWarningMessage: 'Turning this off may allow the Android system to kill the app in the background, which could prevent your alarms from ringing on time. Are you sure?',
 };

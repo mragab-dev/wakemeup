@@ -5,9 +5,11 @@ import { Home, Bell, Pill, BarChart2, Settings } from 'lucide-react-native';
 import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import AdBanner from '@/components/ui/AdBanner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { t } = useSettingsStore();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
@@ -40,7 +42,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="index"
           options={{
-            title: 'Home',
+            title: t('home'),
             headerShown: false, // User complained about "index" header
             tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
           }}
@@ -48,28 +50,28 @@ export default function TabLayout() {
         <Tabs.Screen
           name="alarms"
           options={{
-            title: 'Alarms',
+            title: t('alarms'),
             tabBarIcon: ({ color, size }) => <Bell size={size} color={color} />,
           }}
         />
         <Tabs.Screen
           name="medications"
           options={{
-            title: 'Medications',
+            title: t('medications'),
             tabBarIcon: ({ color, size }) => <Pill size={size} color={color} />,
           }}
         />
         <Tabs.Screen
           name="reports"
           options={{
-            title: 'Reports',
+            title: t('reports'),
             tabBarIcon: ({ color, size }) => <BarChart2 size={size} color={color} />,
           }}
         />
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
+            title: t('settings'),
             tabBarIcon: ({ color, size }) => <Settings size={size} color={color} />,
           }}
         />

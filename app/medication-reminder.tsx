@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, BackHandler, Platform, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import theme from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMedicationStore } from '@/store/medicationStore';
 import { useEventLogStore } from '@/store/eventLogStore';
 import Button from '@/components/ui/Button';
-import { Pill, Check, X, Clock } from 'lucide-react-native';
+import { Pill, Check, X, Clock, Video } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import { useSettingsStore } from '@/store/settingsStore';
-import { Medication, MedicationDose } from '@/types';
+import { Medication, MedicationDose, ChallengeType } from '@/types';
 import nativeAlarm from '@/utils/nativeAlarm';
 import { InterstitialAd, AdEventType, TestIds } from '@/utils/adMob';
 
@@ -23,9 +24,10 @@ const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
 });
 
 export default function MedicationReminderScreen() {
-  const { medicationId, doseId } = useLocalSearchParams<{
+  const { medicationId, doseId, alarmId } = useLocalSearchParams<{
     medicationId: string;
     doseId: string;
+    alarmId?: string;
   }>();
 
   const { colors } = useTheme();
@@ -39,7 +41,8 @@ export default function MedicationReminderScreen() {
   const medication = medications.find(m => m.id === medicationId);
   const dose = medication?.doses.find(d => d.id === doseId);
 
-  const styles = createStyles(colors, medication?.color || colors.secondary);
+  const { top } = useSafeAreaInsets();
+  const styles = createStyles(colors, medication?.color || colors.secondary, top);
 
   useEffect(() => {
     const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
@@ -74,8 +77,9 @@ export default function MedicationReminderScreen() {
       unsubscribeLoaded();
       unsubscribeClosed();
       unsubscribeError();
+      nativeAlarm.stopAlarmService(alarmId);
     };
-  }, [medication, dose, isAdShowing]);
+  }, [medication, dose, isAdShowing, alarmId]);
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -86,7 +90,7 @@ export default function MedicationReminderScreen() {
   const handleTaken = async () => {
     if (!medication || !dose || isCompleted) return;
 
-    nativeAlarm.stopAlarmService();
+    nativeAlarm.stopAlarmService(alarmId);
     setIsCompleted(true);
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(console.error);
 
@@ -118,7 +122,7 @@ export default function MedicationReminderScreen() {
 
   const handleSkipped = async () => {
     if (!medication || !dose || isCompleted) return;
-    nativeAlarm.stopAlarmService();
+    nativeAlarm.stopAlarmService(alarmId);
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(console.error);
 
@@ -169,13 +173,25 @@ export default function MedicationReminderScreen() {
       (notificationContent as any).interruptionLevel = 'timeSensitive';
     }
 
-    await Notifications.scheduleNotificationAsync({
-      content: notificationContent,
-      trigger: { type: 'timeInterval', seconds: 10 * 60, repeats: false } as Notifications.NotificationTriggerInput,
-      identifier: `medication_snooze_${medication.id}_${dose.id}`
-    });
+    if (Platform.OS === 'android') {
+      nativeAlarm.scheduleAlarm(
+        `medication_snooze_${medication.id}_${dose.id}`,
+        `💊 ${medication.name} (${t('snoozed')})`,
+        ChallengeType.NONE,
+        '', // Default sound for medication reminders
+        'medication',
+        0,
+        Date.now() + 10 * 60 * 1000
+      );
+    } else {
+      await Notifications.scheduleNotificationAsync({
+        content: notificationContent,
+        trigger: { type: 'timeInterval', seconds: 10 * 60, repeats: false } as Notifications.NotificationTriggerInput,
+        identifier: `medication_snooze_${medication.id}_${dose.id}`
+      });
+    }
 
-    nativeAlarm.stopAlarmService();
+    nativeAlarm.stopAlarmService(alarmId);
     router.back();
   };
 
@@ -298,12 +314,13 @@ export default function MedicationReminderScreen() {
 
         <View style={styles.secondaryActions}>
           <Button
-            title={t('snooze10min')}
+            title={`10 ${t('min')}`}
             onPress={handleSnooze}
             variant="outline"
             disabled={isCompleted}
             style={[styles.secondaryButton, { borderColor: 'white' }]}
             textStyle={{ color: 'white' }}
+            leftIcon={<Video size={16} color="white" />}
           />
 
           <Button
@@ -321,12 +338,13 @@ export default function MedicationReminderScreen() {
   );
 }
 
-const createStyles = (colors: any, bgColor: string) => StyleSheet.create({
+const createStyles = (colors: any, bgColor: string, topInset: number) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: bgColor,
     justifyContent: 'space-between',
     padding: theme.spacing.lg,
+    paddingTop: Math.max(theme.spacing.lg, topInset + theme.spacing.sm),
   },
   header: {
     alignItems: 'center',

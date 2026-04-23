@@ -379,4 +379,17 @@ export const ar = {
   challengeSummary_math: 'رياضيات',
   challengeSummary_word: 'لغز كلمات',
   challengeSummary_qrcode: 'مسح QR',
+
+  // Permissions Banner
+  permissionsRequired: 'الأذونات المطلوبة',
+  permissionWarningDescription: 'لضمان رنين المنبه بشكل موثوق، يجب تفعيل الإعدادات التالية:',
+  permission_battery: 'تجاهل تحسين البطارية',
+  permission_overlay: 'الظهور فوق التطبيقات الأخرى',
+  permission_exact_alarm: 'جدولة المنبهات الدقيقة',
+  keepAliveTitle: 'WakeMeUp',
+  keepAliveContent: 'المنبه نشط لضمان الدقة',
+  keepAliveSetting: 'خدمة البقاء نشطاً (Keep-Alive)',
+  keepAliveSettingDescription: 'الحفاظ على اتصال مستمر في الخلفية لضمان رنين المنبهات بأقصى درجات الموثوقية.',
+  disableKeepAliveWarningTitle: 'إيقاف خدمة البقاء نشطاً؟',
+  disableKeepAliveWarningMessage: 'إيقاف هذه الخدمة قد يسمح لنظام أندرويد بإغلاق التطبيق في الخلفية، مما قد يمنع المنبهات من الرنين في وقتها. هل أنت متأكد؟',
 };

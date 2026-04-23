@@ -7,6 +7,7 @@ import theme from '@/constants/theme';
 import { router, useLocalSearchParams } from 'expo-router';
 import { X, Zap, Target } from 'lucide-react-native';
 import { useSettingsStore } from '@/store/settingsStore';
+import { useAlarmStore } from '@/store/alarmStore';
 import Button from '@/components/ui/Button';
 
 export default function QRScannerScreen() {
@@ -27,17 +28,12 @@ export default function QRScannerScreen() {
 
   const handleBarCodeScanned = ({ data }: { data: string }) => {
     setScanned(true);
-    router.replace({
-      pathname: (returnPath || '/') as any,
-      params: { ...restParams, scannedData: data },
-    });
+    useAlarmStore.getState().setScannedQrCode(data);
+    router.back();
   };
 
   const handleClose = () => {
-    router.replace({
-      pathname: (returnPath || '/') as any,
-      params: restParams,
-    });
+    router.back();
   };
 
   if (!permission) {

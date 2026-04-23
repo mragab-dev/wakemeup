@@ -17,6 +17,7 @@ const defaultSettings: AppSettings = {
   notificationSound: 'default',
   vibrationEnabled: true,
   exportDataFormat: 'csv',
+  keepAliveEnabled: true,
 };
 
 // Import translations dynamically to avoid circular dependency

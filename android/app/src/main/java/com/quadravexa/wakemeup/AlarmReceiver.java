@@ -19,6 +19,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         serviceIntent.putExtra("challengeType", intent.getStringExtra("challengeType"));
         serviceIntent.putExtra("ringtoneUri", intent.getStringExtra("ringtoneUri"));
         serviceIntent.putExtra("type", intent.getStringExtra("type"));
+        serviceIntent.putExtra("snoozeCount", intent.getIntExtra("snoozeCount", 0));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(serviceIntent);

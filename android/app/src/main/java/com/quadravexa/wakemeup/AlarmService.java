@@ -29,17 +29,13 @@ public class AlarmService extends Service {
     private static final String CHANNEL_ID = "ALARM_SERVICE_CHANNEL";
     private static MediaPlayer mediaPlayer;
     private static Vibrator vibrator;
+    private static java.util.Set<String> activeAlarmIds = new java.util.HashSet<>();
     private PowerManager.WakeLock wakeLock;
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "AlarmService created");
-
-        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE, "WakeMeUp:AlarmWakeLock");
-        wakeLock.acquire(10 * 60 * 1000L);
-
         createNotificationChannel();
     }
 
@@ -53,15 +49,67 @@ public class AlarmService extends Service {
 
         if ("STOP_ALARM".equals(intent.getAction())) {
             Log.d(TAG, "Received STOP_ALARM action");
-            stopAlarm();
-            stopForeground(true);
-            stopSelf();
+            String alarmId = intent.getStringExtra("alarmId");
+            if (alarmId != null) {
+                activeAlarmIds.remove(alarmId);
+            } else {
+                activeAlarmIds.clear();
+            }
+
+            if (activeAlarmIds.isEmpty()) {
+                stopAlarm();
+                stopForeground(true);
+                stopSelf();
+            } else {
+                // Just remove this specific notification
+                NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                if (manager != null && alarmId != null) {
+                    manager.cancel(Math.abs(alarmId.hashCode()));
+                }
+            }
+            return START_NOT_STICKY;
+        }
+
+        if ("START_KEEP_ALIVE".equals(intent.getAction())) {
+            Log.d(TAG, "Starting Keep-Alive foreground service");
+
+            Intent mainIntent = new Intent(this, MainActivity.class);
+            PendingIntent mainPendingIntent = PendingIntent.getActivity(this, 999, mainIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+            String title = intent.getStringExtra("keepAliveTitle");
+            String content = intent.getStringExtra("keepAliveContent");
+            if (title == null)
+                title = "WakeMeUp";
+            if (content == null)
+                content = "Alarm active for accuracy";
+
+            Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                    .setContentTitle(title)
+                    .setContentText(content)
+                    .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                    .setContentIntent(mainPendingIntent)
+                    .setCategory(NotificationCompat.CATEGORY_SERVICE)
+                    .setPriority(NotificationCompat.PRIORITY_LOW) // Less intrusive
+                    .setOngoing(true)
+                    .build();
+
+            startForeground(888, notification);
+            return START_STICKY;
+        }
+
+        if ("STOP_KEEP_ALIVE".equals(intent.getAction())) {
+            Log.d(TAG, "Stopping Keep-Alive service");
+            if (activeAlarmIds.isEmpty()) {
+                stopForeground(true);
+                stopSelf();
+            }
             return START_NOT_STICKY;
         }
 
         if ("RESCHEDULE_ALARMS".equals(intent.getAction())) {
             Log.d(TAG, "Handling RESCHEDULE_ALARMS action");
-            
+
             // Show a temporary silent notification for background rescheduling
             Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                     .setContentTitle("WakeMeUp")
@@ -70,9 +118,9 @@ public class AlarmService extends Service {
                     .setPriority(NotificationCompat.PRIORITY_LOW)
                     .setCategory(NotificationCompat.CATEGORY_SERVICE)
                     .build();
-            
+
             startForeground(2, notification);
-            
+
             // We give the app 15 seconds to rehydrate store and reschedule
             // before stopping the foreground service automatically.
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
@@ -83,32 +131,56 @@ public class AlarmService extends Service {
                     stopSelf();
                 }
             }, 15000);
-            
+
             return START_NOT_STICKY;
         }
 
+        // --- Alarm ringing path ---
         Log.d(TAG, "AlarmService started for ringing with action: " + intent.getAction());
 
+        // Acquire WakeLock only for actual alarm ringing, not for Keep-Alive
+        try {
+            PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (powerManager != null) {
+                wakeLock = powerManager.newWakeLock(
+                        PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP | PowerManager.ON_AFTER_RELEASE,
+                        "WakeMeUp:AlarmWakeLock");
+                wakeLock.acquire(10 * 60 * 1000L);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to acquire WakeLock", e);
+        }
+
         String alarmName = intent.getStringExtra("alarmName");
-        if (alarmName == null) alarmName = "Alarm";
+        if (alarmName == null)
+            alarmName = "Alarm";
+
+        String alarmId = intent.getStringExtra("alarmId");
 
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         // Add extra to tell JS to open challenge screen
         notificationIntent.putExtra("openChallenge", true);
-        notificationIntent.putExtra("alarmId", intent.getStringExtra("alarmId"));
-        notificationIntent.putExtra("challengeType", intent.getStringExtra("challengeType") != null ? intent.getStringExtra("challengeType") : "none");
-        notificationIntent.putExtra("type", intent.getStringExtra("type") != null ? intent.getStringExtra("type") : "alarm");
+        notificationIntent.putExtra("alarmId", alarmId);
+        notificationIntent.putExtra("challengeType",
+                intent.getStringExtra("challengeType") != null ? intent.getStringExtra("challengeType") : "none");
+        notificationIntent.putExtra("type",
+                intent.getStringExtra("type") != null ? intent.getStringExtra("type") : "alarm");
+        notificationIntent.putExtra("snoozeCount", intent.getIntExtra("snoozeCount", 0));
 
+        int notificationId = 1;
         int requestCode = 0;
         try {
-            String idStr = intent.getStringExtra("alarmId");
-            if (idStr != null) {
-                // Strip suffix if any for consistent request code
-                requestCode = idStr.split("_")[0].hashCode();
+            if (alarmId != null) {
+                // Use full hash for both notification ID and request code to allow concurrency
+                requestCode = alarmId.hashCode();
+                notificationId = Math.abs(requestCode);
+                // Ensure we don't use 0 or 2 (which is used for rescheduling)
+                if (notificationId == 0 || notificationId == 2)
+                    notificationId = 1000 + (int) (Math.random() * 1000);
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error generating requestCode", e);
+            Log.e(TAG, "Error generating IDs", e);
         }
 
         PendingIntent pendingIntent = PendingIntent.getActivity(this, requestCode, notificationIntent,
@@ -126,16 +198,29 @@ public class AlarmService extends Service {
                 .setOngoing(true)
                 .build();
 
-        startForeground(1, notification);
+        // Start foreground immediately to prevent system termination
+        startForeground(notificationId, notification);
 
-        playAlarmSound(intent.getStringExtra("ringtoneUri"));
-        startVibration();
-        
+        if (alarmId != null) {
+            activeAlarmIds.add(alarmId);
+        }
+
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(notificationId, notification);
+        }
+
+        if (activeAlarmIds.size() <= 1) {
+            playAlarmSound(intent.getStringExtra("ringtoneUri"));
+            startVibration();
+        }
+
         // Try to start activity directly to open challenge screen immediately
         Intent activityIntent = new Intent(this, MainActivity.class);
-        activityIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        activityIntent.setFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         activityIntent.putExtras(notificationIntent.getExtras());
-        
+
         Log.d(TAG, "Starting MainActivity for alarmId: " + intent.getStringExtra("alarmId"));
         startActivity(activityIntent);
 
@@ -146,10 +231,11 @@ public class AlarmService extends Service {
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }
-        
+
         try {
             // Set volume to maximum for alarms
-            android.media.AudioManager audioManager = (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            android.media.AudioManager audioManager = (android.media.AudioManager) getSystemService(
+                    Context.AUDIO_SERVICE);
             if (audioManager != null) {
                 int maxVolume = audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_ALARM);
                 audioManager.setStreamVolume(android.media.AudioManager.STREAM_ALARM, maxVolume, 0);
@@ -178,12 +264,12 @@ public class AlarmService extends Service {
 
             mediaPlayer = new MediaPlayer();
             mediaPlayer.setDataSource(this, alarmUri);
-            
+
             AudioAttributes audioAttributes = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build();
-            
+
             mediaPlayer.setAudioAttributes(audioAttributes);
             mediaPlayer.setLooping(true);
             mediaPlayer.prepare();
@@ -201,16 +287,16 @@ public class AlarmService extends Service {
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         if (vibrator != null && vibrator.hasVibrator()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createWaveform(new long[]{0, 500, 500}, 0));
+                vibrator.vibrate(VibrationEffect.createWaveform(new long[] { 0, 500, 500 }, 0));
             } else {
-                vibrator.vibrate(new long[]{0, 500, 500}, 0);
+                vibrator.vibrate(new long[] { 0, 500, 500 }, 0);
             }
         }
     }
 
     private void stopAlarm() {
         Log.d(TAG, "Stopping alarm sound and vibration");
-        
+
         // Stop and release MediaPlayer
         if (mediaPlayer != null) {
             try {
@@ -250,8 +336,7 @@ public class AlarmService extends Service {
             NotificationChannel serviceChannel = new NotificationChannel(
                     CHANNEL_ID,
                     "Alarm Service Channel",
-                    NotificationManager.IMPORTANCE_HIGH
-            );
+                    NotificationManager.IMPORTANCE_HIGH);
             serviceChannel.setSound(null, null);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
@@ -264,8 +349,10 @@ public class AlarmService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "AlarmService onDestroy called");
-        // We only stop the alarm here if it's a "natural" death (stopSelf or STOP_ALARM action)
-        // If it was killed by system/user swipe, we rely on onTaskRemoved or STICKY restart.
+        // We only stop the alarm here if it's a "natural" death (stopSelf or STOP_ALARM
+        // action)
+        // If it was killed by system/user swipe, we rely on onTaskRemoved or STICKY
+        // restart.
         stopAlarm();
         if (wakeLock != null && wakeLock.isHeld()) {
             wakeLock.release();
@@ -277,7 +364,8 @@ public class AlarmService extends Service {
         super.onTaskRemoved(rootIntent);
         Log.d(TAG, "Task removed (app swiped away)");
         // Don't stop the alarm sound! Keep it ringing.
-        // On some devices, we might need to recreate the notification to stay in foreground.
+        // On some devices, we might need to recreate the notification to stay in
+        // foreground.
     }
 
     @Nullable

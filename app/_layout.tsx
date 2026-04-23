@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import { useTheme } from "@/hooks/useTheme";
 import * as Notifications from 'expo-notifications';
-import { Platform, AppState, NativeModules, Alert, View, StyleSheet, DeviceEventEmitter } from "react-native";
+import { Platform, AppState, NativeModules, Alert, View, StyleSheet, DeviceEventEmitter, I18nManager } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import AnimatedSplashScreen from './splash';
@@ -15,6 +15,7 @@ import MobileAds from 'react-native-google-mobile-ads';
 import * as ExpoCamera from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import AdBanner from '@/components/ui/AdBanner';
+import { useSettingsStore } from "@/store/settingsStore";
 
 const { AlarmModule, IntentModule } = NativeModules;
 
@@ -46,7 +47,66 @@ export default function RootLayout() {
         const requestPermissionsSequentially = async () => {
           console.log("Starting sequential permission requests...");
 
-          // 1. Notifications
+          if (Platform.OS === 'android' && AlarmModule) {
+            // 1. Battery Optimization (Most Important)
+            try {
+              const isIgnoring = await AlarmModule.isIgnoringBatteryOptimizations();
+              if (!isIgnoring) {
+                await new Promise<void>((resolve) => {
+                  Alert.alert(
+                    "Background Reliability",
+                    "To ensure your alarms ring even when the phone is in sleep mode, please exclude the app from Battery Optimization.",
+                    [
+                      { text: "Allow ✅", onPress: () => { AlarmModule.requestIgnoreBatteryOptimizations(); resolve(); } },
+                      { text: "Deny ❌", style: "cancel", onPress: () => resolve() }
+                    ]
+                  );
+                });
+              }
+            } catch (e) { console.error("Error checking battery optimization:", e); }
+
+            await new Promise(r => setTimeout(r, 800));
+
+            // 2. Exact Alarm (Android 12+)
+            try {
+              const canExact = await AlarmModule.canScheduleExactAlarms();
+              if (!canExact) {
+                await new Promise<void>((resolve) => {
+                  Alert.alert(
+                    "Precise Timing",
+                    "To ensure your alarm rings at the exact scheduled second, please allow the app to set precise alarms.",
+                    [
+                      { text: "Allow ✅", onPress: () => { AlarmModule.requestExactAlarmPermission(); resolve(); } },
+                      { text: "Deny ❌", style: "cancel", onPress: () => resolve() }
+                    ]
+                  );
+                });
+              }
+            } catch (e) { console.error("Error checking exact alarm:", e); }
+
+            await new Promise(r => setTimeout(r, 800));
+
+            // 3. Draw Over Other Apps (for Fullscreen Alarms)
+            try {
+              const canDraw = await AlarmModule.canDrawOverlays();
+              if (!canDraw) {
+                await new Promise<void>((resolve) => {
+                  Alert.alert(
+                    "Fullscreen Alerts",
+                    "To show the alarm challenge screen while your phone is locked, please enable 'Draw over other apps'.",
+                    [
+                      { text: "Allow ✅", onPress: () => { AlarmModule.requestOverlayPermission(); resolve(); } },
+                      { text: "Deny ❌", style: "cancel", onPress: () => resolve() }
+                    ]
+                  );
+                });
+              }
+            } catch (e) { console.error("Error checking overlay permission:", e); }
+
+            await new Promise(r => setTimeout(r, 800));
+          }
+
+          // 4. Notifications
           try {
             const { status: existingStatus } = await Notifications.getPermissionsAsync();
             if (existingStatus !== 'granted') {
@@ -55,10 +115,9 @@ export default function RootLayout() {
             }
           } catch (e) { console.error("Error requesting notifications:", e); }
 
-          // Give a small breathing room between system prompts
           await new Promise(r => setTimeout(r, 500));
 
-          // 2. Camera (for QR)
+          // 5. Camera (for QR)
           try {
             const { status: camStatus } = await ExpoCamera.Camera.getCameraPermissionsAsync();
             if (camStatus !== 'granted') {
@@ -68,7 +127,7 @@ export default function RootLayout() {
 
           await new Promise(r => setTimeout(r, 500));
 
-          // 3. Photo Library (for Medication images)
+          // 6. Photo Library (for Medication images)
           try {
             const { status: libStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
             if (libStatus !== 'granted') {
@@ -76,29 +135,8 @@ export default function RootLayout() {
             }
           } catch (e) { console.error("Error requesting photos:", e); }
 
-          if (Platform.OS === 'android' && AlarmModule) {
-            await new Promise(r => setTimeout(r, 500));
-
-            // 4. Exact Alarm (Android 12+)
-            try {
-              const canExact = await AlarmModule.canScheduleExactAlarms();
-              if (!canExact) {
-                await new Promise<void>((resolve) => {
-                  Alert.alert(
-                    "دقة المواعيد",
-                    "لضمان رنين المنبه في الوقت المحدد تماماً، يرجى السماح للتطبيق بضبط المنبهات الدقيقة من الإعدادات.",
-                    [
-                      { text: "فتح الإعدادات", onPress: () => { AlarmModule.requestExactAlarmPermission(); resolve(); } },
-                      { text: "لاحقاً", style: "cancel", onPress: () => resolve() }
-                    ]
-                  );
-                });
-              }
-            } catch (e) { console.error("Error checking exact alarm:", e); }
-
-            await new Promise(r => setTimeout(r, 800)); // Longer delay before another possible system intent
-
-            // 5. AdMob Initialize
+          if (Platform.OS === 'android') {
+            // 7. AdMob Initialize
             try {
               await MobileAds().initialize();
               console.log("AdMob initialized");
@@ -106,42 +144,12 @@ export default function RootLayout() {
               console.error("AdMob init error:", e);
             }
 
-            // 6. Battery Optimization
-            try {
-              const isIgnoring = await AlarmModule.isIgnoringBatteryOptimizations();
-              if (!isIgnoring) {
-                await new Promise<void>((resolve) => {
-                  Alert.alert(
-                    "العمل في الخلفية",
-                    "لضمان عمل المنبه حتى عندما يكون الهاتف في وضع السكون، يرجى استثناء التطبيق من تحسين البطارية (Battery Optimization).",
-                    [
-                      { text: "تعديل", onPress: () => { AlarmModule.requestIgnoreBatteryOptimizations(); resolve(); } },
-                      { text: "لاحقاً", style: "cancel", onPress: () => resolve() }
-                    ]
-                  );
-                });
-              }
-            } catch (e) { console.error("Error checking battery optimization:", e); }
-
-            await new Promise(r => setTimeout(r, 800));
-
-            // 6. Draw Over Other Apps (for Fullscreen Alarms)
-            try {
-              const canDraw = await AlarmModule.canDrawOverlays();
-              console.log("Can draw overlays:", canDraw);
-              if (!canDraw) {
-                await new Promise<void>((resolve) => {
-                  Alert.alert(
-                    "تنبيهات ملء الشاشة",
-                    "لإظهار شاشة تحدي المنبه حتى عندما يكون الهاتف مغلقاً، يرجى تفعيل خاصية 'الظهور فوق التطبيقات الأخرى'.",
-                    [
-                      { text: "تعديل", onPress: () => { AlarmModule.requestOverlayPermission(); resolve(); } },
-                      { text: "لاحقاً", style: "cancel", onPress: () => resolve() }
-                    ]
-                  );
-                });
-              }
-            } catch (e) { console.error("Error checking overlay permission:", e); }
+            // 8. Handle RTL
+            const isArabic = useSettingsStore.getState().language === 'ar';
+            if (isArabic !== I18nManager.isRTL) {
+              I18nManager.allowRTL(isArabic);
+              I18nManager.forceRTL(isArabic);
+            }
           }
           console.log("Permission sequence finished.");
         };
@@ -233,7 +241,11 @@ export default function RootLayout() {
         if (data.type === 'alarm') {
           router.push({
             pathname: '/alarm-challenge',
-            params: { alarmId: data.alarmId as string, challengeType: data.challengeType as string }
+            params: {
+              alarmId: data.alarmId as string,
+              challengeType: data.challengeType as string,
+              snoozeCount: data.snoozeCount !== undefined ? String(data.snoozeCount) : '0'
+            }
           });
         } else if (data.type === 'medication') {
           let cleanId = data.alarmId as string || `${data.medicationId}_${data.doseId}`;
@@ -253,7 +265,7 @@ export default function RootLayout() {
           if (parts.length >= 2) {
             router.push({
               pathname: '/medication-reminder',
-              params: { medicationId: parts[0], doseId: parts[1] }
+              params: { medicationId: parts[0], doseId: parts[1], alarmId: data.alarmId as string }
             });
           }
         }
@@ -265,7 +277,11 @@ export default function RootLayout() {
       if (data?.type === 'alarm') {
         router.push({
           pathname: '/alarm-challenge',
-          params: { alarmId: data.alarmId as string, challengeType: data.challengeType as string }
+          params: {
+            alarmId: data.alarmId as string,
+            challengeType: data.challengeType as string,
+            snoozeCount: data.snoozeCount !== undefined ? String(data.snoozeCount) : '0'
+          }
         });
       } else if (data?.type === 'medication') {
         let cleanId = data.alarmId as string || `${data.medicationId}_${data.doseId}`;
@@ -286,7 +302,7 @@ export default function RootLayout() {
         if (parts.length >= 2) {
           router.push({
             pathname: '/medication-reminder',
-            params: { medicationId: parts[0], doseId: parts[1] }
+            params: { medicationId: parts[0], doseId: parts[1], alarmId: data.alarmId as string }
           });
         }
       }
@@ -309,13 +325,30 @@ export default function RootLayout() {
             if (data.type === 'alarm') {
               router.push({
                 pathname: '/alarm-challenge',
-                params: { alarmId: data.alarmId as string, challengeType: data.challengeType as string }
+                params: {
+                  alarmId: data.alarmId as string,
+                  challengeType: data.challengeType as string,
+                  snoozeCount: data.snoozeCount !== undefined ? String(data.snoozeCount) : '0'
+                }
               });
               break;
             } else if (data.type === 'medication') {
+              let medId = data.medicationId as string;
+              let dId = data.doseId as string;
+              let aId = data.alarmId as string;
+
+              // If it's a snooze identifier, extract the real IDs
+              if (aId?.startsWith('medication_snooze_')) {
+                const parts = aId.replace('medication_snooze_', '').split('_');
+                if (parts.length >= 2) {
+                  medId = parts[0];
+                  dId = parts[1];
+                }
+              }
+
               router.push({
                 pathname: '/medication-reminder',
-                params: { medicationId: data.medicationId as string, doseId: data.doseId as string }
+                params: { medicationId: medId, doseId: dId, alarmId: aId }
               });
               break;
             }
