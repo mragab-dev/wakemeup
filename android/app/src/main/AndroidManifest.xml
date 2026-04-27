@@ -80,7 +80,7 @@
         <!-- تعديل هنا لحل مشكلة التكرار -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"
+            android:value="ca-app-pub-5644089575101992~7359878861"
             tools:replace="android:value"/>
     </application>
 </manifest>

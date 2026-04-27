@@ -8,7 +8,7 @@ interface AdBannerProps {
 }
 
 const AdBanner: React.FC<AdBannerProps> = ({
-  unitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111',
+  unitId = 'ca-app-pub-5644089575101992/3417201131',
   size = BannerAdSize.ANCHORED_ADAPTIVE_BANNER
 }) => {
 

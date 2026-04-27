@@ -23,8 +23,8 @@ import nativeAlarm from '@/utils/nativeAlarm';
 
 const { AlarmModule, IntentModule } = NativeModules;
 
-// AdMob Interstitial Ad Unit ID (using Test ID for now)
-const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3940256099942544/1033173712';
+// AdMob Interstitial Ad Unit ID
+const adUnitId = 'ca-app-pub-5644089575101992/9489216081';
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
   requestNonPersonalizedAdsOnly: true,
